@@ -84,7 +84,7 @@ clean:
 	rm -f *.o *.a *.so *.so.* $(GC_EXAMPLES) 
 
 tgz: clean
-	cd ..; tar cvzf cppgc.tgz cppgc
+	cd ..; tar --exclude=.svn -chvzf cppgc-1.01.tar.gz cppgc
 
 zip: clean
 	cd ..; zip -r cppgc.zip cppgc
