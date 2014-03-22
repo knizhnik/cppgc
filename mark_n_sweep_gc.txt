@@ -1,0 +1,425 @@
+                     Mark&sweep garbage collector for C++
+                  ==============================================
+
+Modern C++ provides many new features which moves this language from "object-oriented assembler"
+to safe high-level programming language. Unfortunately one of the main problems of C/C++
+is still unresolved: memory deallocation. Thousands man/years of programmers were spent for 
+debugging and fixing various bugs related with incorrect memory deallocation:
+memory leaks and dangling references. If you forget to deallocate some object, you are loosing memory and sooner or later
+your program will get not-enough memory error. If you remove object which is still referenced by other objects, then 
+situation is even worse: application can try to access deleted objects. Such attempt usually cause unpredictable behavior
+(which depends on content of memory of deallocated object - actually garbage). Such bugs are non-deterministic and very difficult
+to reproduce and debug. 
+
+C++ address the problem with memory deallocation using "smart pointers", such as "std::shared_ptr" or "boost::shared_ptr".
+In both case reference counters are used to determine a moment when an object is not needed any more. 
+Programmer has to use shared_ptr instead of normal C++ pointers or references.  Copying reference cause increment of reference counter.
+And when variable is deleted or assigned other value, reference counter is decremented. When reference counter becomes equal to zero, object is deleted.
+This schema seems to be quite simple. But unfortunately there are several disadvantages of this approach:
+
+1. Noticeable performance penalty. Each manipulation with pointers requires update of counter.
+In case of multithreaded application we have to use atomic operations or synchronization primitives to avoid race conditions.
+
+2. Reference counters are not able to deal with cyclic data structures. For example L2-List (double linked list) elements never can be deallocated 
+using reference counters. Programmer should somehow explicitly break the loop.
+
+3. You should always use smart pointers instead of normal pointers: method parameters should be declared as smart pointers, 
+method return type should be also smart pointer, local variable should have smart pointer type...
+If you try to use normal C++ pointer instead of smart pointer, then it can happen that object will be deallocated and you will access garbage.
+
+4. Deleting last reference to huge tree of objects can cause large number of cascade (recursive) deletes which can cause stack overflow.
+
+5. Extra space overhead. boost::shared_ptr requires twice more space than normal pointer. It means that size of object consisting mostly of pointers 
+(for example tree node) can be almost doubled. 
+
+Now let's return a little bit to theory. Implicit memory deallocation or garbage collection algorithms can be splitted in two main classes:
+reference-counter based and mark&sweep. Reference counters approach was described earlier. Mark&sweep algorithms consist of two phases.
+At the first phase (mark) algorithm recursively traverses all accessible objects and marks them. 
+At the second phase (sweep) it deallocates all non-marked objects. Mark&sweep algorithms can handle cyclic data structures and that is why them
+are used in most of modern high-level object-oriented languages, like Java or C#.
+
+To be able to mark live (accessible) objects, make&sweep algorithm needs to know some set of root references.
+Usually it includes local and global variables. It is not a problem to detect such variables for example in Java virtual machine.
+But C++ program is compiled to native code and here detection of such variables is problematic.
+One of possible solutions of the problem is conservative garbage collector. "Conservative" here means that algorithm treats as a pointer everything which looks 
+like a pointer. So if you wrote:
+
+    int x = 0x605018;
+
+then this "x" can be treated as a pointer, if it's content occasionally corresponds to address of some object, although it is actually integer.
+It is one of the main problem of conservative garbage collectors which can cause false detection of live object and so lead to memory leak.
+
+Another big problem of conservative garbage collector for C++ is that we need to somehow detect location of global and local variables.
+Them can be located in static memory, in stack, in registers... So conservative garbage collector has to contain a lot of system and machine dependent
+code which allows him to scan heap, stack and hardware registers.
+As a result, conservative garbage collectors are slow, very unportable and that is why them are rarely used.
+
+Is it possible to implement non-conservative mark&sweep garbage collector for C++?
+We have to address two main challenges:
+
+1. How to locate variables?
+2. How to locate references inside objects?
+
+We have no access to C++ runtime and C++ doesn't support reflection.
+So we still have to use something like smart pointers instead of normal C++ pointers.
+But their usage will be quite different comparing with shared_ptr using reference counter.
+And we really need to have two different kind of pointers.
+One will be used inside class definitions - their goal is to mark referenced objects.
+Another one will be used instead of local variables - them should provide set of root references for garbage collector.
+
+Let's call first kind of smart pointer as Ref<T> and second kind as Var<T>.
+The role of Var is more simple: it should somehow registers pointer in garbage collector when variable is created and unregisters pointer
+at the end of variable scope. 
+
+For simplicity and efficiency reasons we assume that each thread will have its own local memory allocator. 
+It is possible to have objects shared by all threads, but them should be created and controlled by global allocator.
+Registering variables is trivial in this case: we can just link them in L1 list. 
+So constructor of Var<T> links itself in the root list of memory allocator and destructor of Var<T> unlinks itself from this list.
+
+The goal of Ref<T> class is more complex. It should somehow mark referenced object. 
+C++ can help as in two ways:
+1. It implicitly invokes constructors of all object components when object is constructed.
+2. If implicitly invokes destructors of all object components when object is destructed.
+3. It invokes copy constructors of all object components when object is copied
+
+So if class Ref<T> has constructor and destructor, then C++ compiler will generate code which invokes them.
+Been invoked them can somehow propagate to the garbage collector reference to the object.
+It is the second task. Let's first concentrate on the question what to prefer: constructors or destructors?
+
+C++ doesn't allow to call object constructor or destructor directly.
+But we can redefine new/delete operators so that it will be possible to invoke constructor/destructor multiple times
+for the same object: 
+
+    class Object 
+    {
+        virtual ~Object() {}
+        virtual void mark() = 0;    
+        void* operator new(size_t size, void* addr) { return addr; } // return self address
+        void operator delete(void* ptr) {} // do nothing
+    };
+
+    class TreeNode : public Object 
+    { 
+        Ref<TreeNode> left;
+        Ref<TreeNode> right;
+    
+        virtual void mark() { (void)new (this) TreeNode(); } // it will invoke constructors of Ref for left and right
+    };
+
+Virtual method TreeNode::mark will invoke constructor of Ref<TreeNode> class for left and right components.
+And destructor of this class (impolitely generated by compiler) will invoke destructor of Ref<TreeNode> 
+class for left and right components.
+
+So we can force invocation of both constructors and destructors for this object.
+But in both cases we are faced with the problems.
+
+The problem with redefined operator new and constructors is that compiler (at least GCC does it)
+initializes memory returned by operator new with zeros before calling constructor when the class has virtual functions. 
+So we are loosing all content of the object.
+
+The problem with destructor is that it updates pointer to virtual table. When destructor of some class is completed, 
+it replaces pointer to self virtual table with pointer to virtual table of base class and then invokes destructor of 
+the base class.  As a result, after returning from destructor, virtual table pointer contains wrong value. 
+
+Classes without multiple inheritance contains only one pointer to virtual table which
+most of C++ compiler places at the beginning of the object.
+So we can implement some hack - save first pointer of the object before calling destructor and then restore it:
+
+     void* vtable = *(void**)obj;
+     delete obj; // invoke destructors to mark referenced
+     *(void**)obj = vtable; // restore virtual table pointer replaced by destructor
+
+Certainly it is non-portable solution and it will not work in case of multiple inheritance.
+But my first implementation of mark&sweep collector for C++ really uses this approach.
+Garbage collection is done by destructors! Very strange approach, isn't it?
+
+Unfortunately if we invoke constructors/destructors for the self object, we should prohibit use
+constructors/destructors for normal purposes: for initialization/destruction of object components.
+So we can not use for example std::string as class component. 
+This is why I finally reject both 1 and 2 approaches.
+
+Approach with copy constructors do not have some limitation.
+Certainly there is also some elements of hacking here: to mark object references we need to create copy of the object.
+But it allows object to have std::string components and normally use default constructors/destructors.
+Copying such components as std::string will require to perform useless allocation and copying of data.
+But at least it doesn't change object content and doesn't cause any memory leaks.
+Garbage collector is intended to be invoked not so frequently, so this extra overhead is not so critical.
+
+Now return back to the problem of notification of garbage collector about referenced object from destructor of Ref<T> object.
+We can not pass some parameter to destructor and we can not use some global variable because application can be multithreaded.
+So the only choice is to use thread local (or thread specific) memory. Fortunately this mechanism is provided at most systems and is fast enough.
+
+So we can grab destructor's mechanism for the purposes of garbage collection!
+
+What is good with mark&sweep garbage collector is that we can easily control when garbage collection should be initiated.
+It can start automatically after reaching some threshold value for total size for allocated object since last GC.
+But we can also invoke it explicitly (may be also checking amount of allocated space since last GC).
+In the last case we can temporally use normal C++ pointer variables instead of Var<T> smart pointers, because objects can not be deleted before
+we start garbage collection. We should only save roots of all needed object trees in Var<T> variables before initiation of GC.
+
+Let's now provide some implementation details.
+The main class is MemoryAllocator - it is responsible for allocation and implicit deallocation of objects:
+
+    class MemoryAllocator 
+    {
+        /**
+         * Get allocator for the current thread. Each thread should have its own allocator.
+         */
+        static MemoryAllocator* getCurrent();
+       
+        /**
+         * Allocate object 
+         * @param object size
+         */
+        static void* allocate(size_t size);
+
+        /**
+         * Mark object as reachable and recursively mark all references objects
+         * @param obj marked objects (may be NULL)
+         */
+        static void mark(Object* obj);
+
+        /**
+         * Register root object. Registering root protects it and all referenced objects from GC.
+         */
+        static void registerRoot(Root* root);
+            
+        /**
+         * Unregister root object. Make this object tree available for GC.
+         */
+        static void unregisterRoot(Root* root);
+
+        /**
+         * Explicitly starts garbage collection.
+         */
+        static void gc();
+ 
+        /**
+         * Start garbage collection if number of allocated objects since last GC exceeds StartThreshold 
+         */
+        static void allowGC();
+        
+        /**
+         * Create instance of memory allocator 
+         * @param gcStartThreshold total size of objects allocated since last GC after which allowGC() method initiates garbage collection
+         * @param gcAutoStartThreshold  total size of objects allocated since last GC after which garbage collection is automatically started. 
+         * Please notice that all used objects should be protected from GC in this case by registering their roots.
+         */
+        MemoryAllocator(size_t gcStartThreshold = 1024*1024, size_t gcAutoStartThreshold = (size_t)-1);
+
+        /**
+         * Deallocate all objects create by GC.
+         */
+        ~MemoryAllocator();
+    };
+
+Each thread (connection, session,...) should construct and use its own allocator.
+Current allocator is located using thread local memory mechanism (Posix pthread_getspecific or Windows TlsGetValue).
+All static methods of MemoryAllocator class refer to the current allocator.
+
+As it was mentioned above, there are two ways of starting garbage collection: automatic and manual. 
+So we provide two threshold values in constructor of MemoryAllocator.  By default automatic start of GC is disabled, 
+because in this case programmer should always protect all objects from GC using Var<T> variables.
+Manual start of GC can be performed either by gc() method either by allowGC() method. Last one compares total size of objects allocated since last GC with
+threshold value and if it exceeds threshold, then starts garbage collection.
+
+Base class for all garbage collectable objects is defined in this way:
+
+    class Object 
+    {
+      public:
+        /**
+         * Redefined operator new for all derived classes
+         */
+        void* operator new(size_t size) 
+        { 
+            return MemoryAllocator::allocate(size);
+        }
+
+        /**
+         * Objects should not be explicitly deleted.
+         * Unreachable object is deleted by garbage collector.
+         */
+        void operator delete(void* obj) {
+            free((ObjectHeader*)obj - 1); 
+        } 
+ 
+      protected:
+        friend class MemoryAllocator;
+        
+        /**
+         * Mark referenced objects
+         */
+        virtual void mark() {}
+
+        /**
+         * Virtual destructor used by memory allocator to finilize object
+         */
+        virtual~Object() {}
+    };
+
+It redefines new/delete operators and declares virtual method mark() which should be redefined in derived classes to make object copy and mark referenced objects. It can be done using GC_MARK macro:
+
+    #define GC_MARK(Class) Class(*this)
+
+    class TreeNode : public Object 
+    { 
+        Ref<TreeNode> left;
+        Ref<TreeNode> right;
+    
+        virtual void mark() { GC_MARK(TreeNode); } 
+    };
+    
+References in garbage collected classes should be represented using Ref<T> class:
+
+    template<class T>
+    class Ref 
+    {
+        T* obj;
+
+      public:
+        T* operator->() { 
+            return obj; 
+        }
+        // ... many other methods emulating normal pointer operations
+       
+        /**
+         * Copy constructor marks referenced objects using current allocator (if any)
+         */         
+        Ref(Ref<T> const& ref) : obj(ref.obj) {
+            MemoryAllocator::mark(obj);
+        }
+    };
+
+Here the most interesting thing is destructor. It marks referenced objects.
+
+The last puzzle in the picture is variable protecting object from garbage collection.
+It pins root of object tree making all objects accessible from this root reachable for marking.
+
+    class Root
+    {
+        friend class MemoryAllocator;
+
+      protected:
+        Root* next; // roots are linked in L1 list
+  
+        /**
+         * Mark root object
+         */
+        virtual void mark() = 0;
+
+        /**
+         * Register objects tree root in the current memory allocator
+         */
+        Root() 
+        { 
+            MemoryAllocator::registerRoot(this);
+        }
+        
+        /**
+         * Unregister objects tree root in the current memory allocator
+         */
+        ~Root() 
+        { 
+            MemoryAllocator::unregisterRoot(this);
+        }        
+    };
+
+No surprises here: constructor is linking object in the list, destructor unlinks it from the list.
+
+There are may be several implementation of Root interface. The simplest is Var<T> representing variable with single reference:
+
+    template<class T>
+    class Var : Root
+    {
+        T* obj;
+
+      public:
+        T* operator->() { 
+            return obj; 
+        }
+        // ... many other methods emulating normal pointer operations
+
+        virtual void mark() { 
+            MemoryAllocator::mark(obj);
+        }
+    };
+
+There are also implementations of Root interface representing fixed and varying size array of references.
+At mark phase memory allocator traverses list of roots and invokes mark() method for each root.
+
+Let's now compare performance.
+I have implemented simple memory allocator benchmark which just creates in a loop larger number of simple objects and store pointers to them
+in cyclic buffer. So relatively small subset of objects is alive at each moment of time.
+I have tested standard C++ memory allocator and several specialized allocator: stack allocator and fixed size allocator.
+This is implementation using standard C++ new/delete mechanism:
+
+    Object* objects[liveObjects];
+    memset(objects, 0, sizeof(objects));
+    for (size_t i = 0; i < totalObjects; i++) { 
+        delete objects[i % liveObjects];
+        objects[i % liveObjects] = new Object();
+    }
+
+Implementation for memory allocator with garbage collection is even simpler.
+This is one for boost::shared_ptr:
+
+    boost::shared_ptr<Object> objectRefs[liveObjects];
+    for (size_t i = 0; i < totalObjects; i++) { 
+        objectRefs[i % liveObjects] = boost::shared_ptr<Object>(new Object());
+    }
+
+And this is for mark&sweep allocator:
+
+    GC::MemoryAllocator mem(1*Mb, 1*Mb);
+    GC::ArrayVar<GCObject,liveObjects> objectRefs;
+    for (size_t i = 0; i < totalObjects; i++) { 
+        objectRefs[i % liveObjects] = new GCObject();
+    }
+
+Results at Linux are the following (in seconds - smaller is better):
+
+Standard new/delete     35
+Fixed size allocator    11
+Stack allocator         12
+boost::shared_ptr:      68
+std::shared_ptr:        68
+Mark&sweep:             50
+
+Results at Windows (Visual Studio 2012) at the same system but under VmWare:
+
+Standard new/delete:    329
+Fixed size allocator:   79
+Stack allocator:        77
+std::shared_ptr:        702
+Mark&sweep:             272
+
+
+Please notice that both shared_ptr and mark&sweep use standard C runtime memory allocation functions.
+So their time is sum of memory allocation/deallocation itself and smart pointer overhead.
+In case of reference counters (shared_ptr) it is twice large than for mark&sweep algorithm.
+
+Finally I want to summarize pros and contras of mark&sweep allocator:
+
++ It is able to handle cyclic data structures.
++ Has less overhead for manipulation with pointers.
++ Allows to control time of initiating GC so makes it possible to temporarily use normal C++ pointers.
++ Less space overhead: sizeof(Ref<T>) == sizeof(T*)
+
+- Performs extra copying of objects during mark phase.
+- Unpredictable object destruction time in case of automatic start of garbage collection.
+  So destruction of unreferenced objects (and releasing all resource used by the object) can be delayed for a long time.
+  This is why it is better to explicitly release all objects resources, for example add close() method to object
+  interface which will close used file.
+- Requires special base class for garbage collectable objects.
+- Garbage collection can take significant amount of time (if number of objects is large) and so it may delay normal activity of application for 
+  noticeable amount of time. It may cause increase of application response time. 
+  Many modern garbage collector are able to work in background. But it introduces a lot of challenges which can not be solved at C++ level.
+- Recursive traversal of huge object clusters at mark stage may cause stack overflow.
+
+So mark&sweep collector for C++ definitely can not be considered as "silver bullet" which solves the problem with memory deallocation in C++
+or as better alternative to standard C++ new/delete and smart pointers based on reference counters.
+But for some use cases it can provide better results than alternative approaches.
+
+
+
