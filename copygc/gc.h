@@ -12,19 +12,24 @@ namespace GC
     class Root;
 
     /**
-     * Invoke copy constructors of Ref<T> class to mark referenced objects
-     */
-    #define GC_MARK(Class) Class(*this)
-
-    /**
-     * Object header used by allocator to link all allocated objects.
+     * Object header used by allocator to mark objects and set reference to object copy
      */
     struct ObjectHeader 
     { 
-        ObjectHeader* next;
+        Object* copy;
+        enum { GC_MARK = 1 };
 
-        Object* getObject() const { 
-            return (Object*)(this + 1);
+      public:
+        bool isMarked() const { 
+            return (size_t)copy & GC_MARK;
+        }
+        
+        Object* getCopy() const { 
+            return (Object*)((size_t)copy - GC_MARK);
+        }
+
+        void setCopy(Object* obj) { 
+            copy = (Object*)((size_t)obj + GC_MARK);
         }
     };
 
@@ -46,17 +51,23 @@ namespace GC
          * Allocate object 
          * @param object size
          */
-        static void* allocate(size_t size);
+        static Object* allocate(size_t size);
+
+        /**
+         * Total size of allocated objects
+         */
+        static size_t totalAllocated();
 
         /**
          * Mark object as reachable and recursively mark all references objects
          * @param obj marked objects (may be NULL)
+         * @return copy of the object
          */
-        static void mark(Object* obj);
+        static Object* mark(Object* obj);
 
         /**
          * Mark array of objects.
-         * @param refs pointer to array of references
+         * @param refs pointer to array of references. Elements will be replaced with copies.
          * @param nRefs number of references
          */
         static void mark(Object** refs, size_t nRefs);
@@ -83,11 +94,16 @@ namespace GC
         
         /**
          * Create instance of memory allocator 
+         * @param memorySegmentSize size of memory segment managed by this allocator. Please notice that allocator creates one
+         * segment: current and copy. Them are changing their roles after each GC.
          * @param gcStartThreshold total size of objects allocated since last GC after which allowGC() method initiates garbage collection
          * @param gcAutoStartThreshold  total size of objects allocated since last GC after which garbage collection is automatically started. 
-         * Please notice that all used objects should be protected from GC in this case by registering their roots.
+         * Please notice that you should not have any direct (C++) pointer to access object if you enable automatic start
+         * of copying garbage collection,because object caq n bemove at any momewnt of time.
+         * @param throwExceptionOnNoMemory throw std::bad_alloc exception in case of no-memory insteadof returning NULL
          */
-        MemoryAllocator(size_t gcStartThreshold = 1024*1024, size_t gcAutoStartThreshold = (size_t)-1);
+        MemoryAllocator(size_t memorySegmentSize, size_t gcStartThreshold = 1024*1024, size_t gcAutoStartThreshold = (size_t)-1, 
+            bool throwExceptionOnNoMemory = false);
 
         /**
          * Deallocate all objects create by GC.
@@ -97,22 +113,27 @@ namespace GC
         // internal instance methods
         void  _registerRoot(Root* root);     
         void  _unregisterRoot(Root* root);        
-        void  _mark(Object* obj);
+        Object*  _mark(Object* obj);
         void  _mark(Object** refs, size_t nRefs);
-        void* _allocate(size_t size);
+        Object* _allocate(size_t size);
         void  _gc();
         void  _allowGC();
+        size_t _totalAllocated() const { 
+            return used;
+        }
+
 
       private:
-        void markPhase();
-        void sweepPhase();
-
-      private:
+        size_t  segmentSize;
+        size_t  used;
+        char*   segments[2];
+        int     currSegment;
         size_t  allocated;
         Root*   roots;
         ObjectHeader* objects;
         size_t  startThreshold;
         size_t  autoStartThreshold;
+        bool    throwException;
 
         static ThreadContext<MemoryAllocator> ctx;
     };
@@ -125,10 +146,28 @@ namespace GC
       public:
         /**
          * Redefined operator new for all derived classes
+         * @param allocator allocator to be used
+         */
+        void* operator new(size_t size, MemoryAllocator* allocator) 
+        { 
+            return allocator->_allocate(size);
+        }
+
+        /**
+         * Redefined operator new for all derived classes
          */
         void* operator new(size_t size) 
         { 
             return MemoryAllocator::allocate(size);
+        }
+
+        /**
+         * Redefined operator new for all derived classes with varying  size
+         * @param allocator allocator to be used
+         */
+        void* operator new(size_t fixedSize, size_t varyingSize, MemoryAllocator* allocator)
+        { 
+            return allocator->_allocate(fixedSize + varyingSize);
         }
 
         /**
@@ -141,31 +180,19 @@ namespace GC
 
         /**
          * Objects should not be explicitly deleted.
-         * Unreachable objects are deleted by garbage collector.
+         * Unreachable object is deleted by garbage collector.
          */
-        void operator delete(void* obj) {
-            free((ObjectHeader*)obj - 1); 
-        } 
-        void operator delete(void* obj, size_t) { 
-            free((ObjectHeader*)obj - 1);             
-        } 
+        void operator delete(void*) {}
+        void operator delete(void*, size_t) {}
 
       protected:
         friend class MemoryAllocator;
         
         /**
-         * Mark referenced objects
+         * Recusrsively clone object
+         * @param allocator used allocator
          */
-        virtual void mark(MemoryAllocator* allocator) {}
-
-        /**
-         * Virtual destructor used by memory allocator to finilize object
-         */
-        virtual~Object() {}
-
-        ObjectHeader* getHeader() { 
-            return (ObjectHeader*)this - 1;
-        }
+        virtual Object* clone(MemoryAllocator* allocator) = 0;
     };
 
     /**
@@ -218,8 +245,9 @@ namespace GC
         /**
          * Copy constructor marks referenced objects using current allocator (if any)
          */         
-        Ref(Ref<T> const& ref) : obj(ref.obj) {
-            MemoryAllocator::mark(obj);
+        Ref(Ref<T> const& ref) 
+        {
+            obj = (T*)MemoryAllocator::mark(ref.obj);
         }
     };
 
@@ -305,7 +333,7 @@ namespace GC
         }
         
         virtual void mark(MemoryAllocator* allocator) { 
-            allocator->_mark(obj);
+            obj = (T*)allocator->_mark(obj);
         }
 
         Var(T* ptr = NULL) : obj(ptr) {}

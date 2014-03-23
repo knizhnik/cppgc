@@ -1,0 +1,68 @@
+# -*- makefile -*-
+# Makefile for Mi# -*- makefile -*-
+# Makefile for Microsoft Windows with Microsoft Visual C++ 5.0 or higher compiler
+
+!IFNDEF DEBUG
+DEBUG=1
+!ENDIF
+
+GC_OBJS = gc.obj threadctx.obj
+GC_INCS = gc.h threadctx.h gcclasses.h
+GC_LIB = gc.lib
+GC_EXAMPLES = testgc.exe mallocbench.exe
+
+
+CC = cl
+
+!IF $(DEBUG)
+OPTIMIZATION=-Od
+MODEL=-MTd
+!ELSE
+OPTIMIZATION=-Ox
+MODEL=-MTd
+!ENDIF
+
+CFLAGS = -c -I. -nologo -Zi -W3 -EHsc $(OPTIMIZATION) $(MODEL)
+
+LD = $(CC)
+LDFLAGS = -Zi -nologo  $(MODEL)
+
+AR = lib
+ARFLAGS = 
+
+library: $(GC_LIB)
+
+all: library examples
+
+gc.obj: gc.cpp $(GC_INCS)
+		$(CC) $(CFLAGS) gc.cpp
+
+threadctx.obj: threadctx.cpp $(GC_INCS)
+		$(CC) $(CFLAGS) threadctx.cpp
+
+
+$(GC_LIB): $(GC_OBJS)
+	$(AR) $(ARFLAGS)  /OUT:$(GC_LIB) $(GC_OBJS)
+
+examples: $(GC_EXAMPLES) 
+
+testgc.exe: testgc.obj $(GC_LIB)
+	$(LD) $(LDFLAGS) testgc.obj $(GC_LIB)
+
+testgc.obj: samples/testgc.cpp $(GC_INCS)
+	$(CC) $(CFLAGS) samples/testgc.cpp
+
+mallocbench.exe: mallocbench.obj $(GC_LIB)
+	$(LD) $(LDFLAGS) mallocbench.obj $(GC_LIB)
+
+mallocbench.obj: samples/mallocbench.cpp $(GC_INCS)
+	$(CC) $(CFLAGS) samples/mallocbench.cpp
+
+clean: 
+	-del *.odb,*.exp,*.obj,*.pch,*.pdb,*.ilk,*.ncb,*.opt
+
+zip: clean
+	cd ..
+	-del copygc.zip
+    zip -r copygc.zip copygc
+

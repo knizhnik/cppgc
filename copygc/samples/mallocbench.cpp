@@ -131,12 +131,16 @@ struct Object {
 struct GCObject : public GC::Object
 { 
     char body[objectSize];
+
+    Object* clone(GC::MemoryAllocator* allocator) { 
+        return new (allocator) GCObject(*this);        
+    }
 };
 
 int main() { 
     Object* objects[liveObjects];
     time_t start;
-
+#if 0
     memset(objects, 0, sizeof(objects));
     start = time(NULL);
     for (size_t i = 0; i < totalObjects; i++) { 
@@ -191,15 +195,15 @@ int main() {
         }
     }
     printf("Elapsed time std::shared_ptr: %ld\n", time(NULL) - start);
-
+#endif
     {
-        GC::MemoryAllocator mem(1*Mb, 1*Mb);
+        GC::MemoryAllocator mem(10*Mb, 1*Mb, 1*Mb);
         GC::ArrayVar<GCObject,liveObjects> objectRefs;
         start = time(NULL);
         for (size_t i = 0; i < totalObjects; i++) { 
             objectRefs[i % liveObjects] = new GCObject();
         }
     }
-    printf("Elapsed time for mark&sweep: %ld\n", time(NULL) - start);
+    printf("Elapsed time for copy allocator: %ld\n", time(NULL) - start);
     return 0;
 }
