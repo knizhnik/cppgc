@@ -140,7 +140,7 @@ struct GCObject : public GC::Object
 int main() { 
     Object* objects[liveObjects];
     time_t start;
-#if 0
+
     memset(objects, 0, sizeof(objects));
     start = time(NULL);
     for (size_t i = 0; i < totalObjects; i++) { 
@@ -195,7 +195,6 @@ int main() {
         }
     }
     printf("Elapsed time std::shared_ptr: %ld\n", time(NULL) - start);
-#endif
     {
         GC::MemoryAllocator mem(10*Mb, 1*Mb, 1*Mb);
         GC::ArrayVar<GCObject,liveObjects> objectRefs;
