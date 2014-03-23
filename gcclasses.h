@@ -295,6 +295,17 @@ namespace GC
             body[len] = '\0';
         }
      };
+
+     /**
+      * Garbage collectable wrapper class for T.
+      * "Object" should be first base in inheritance list.
+      */
+    template<class T>
+    class Wrapper : public Object, public T
+    {
+    };
+
 };
+
 
 #endif
