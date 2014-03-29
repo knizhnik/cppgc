@@ -374,13 +374,25 @@ Including "this" pointer. Please look at the following "init" method of SomeClas
          }
      };
 
-It seems to be trivial and obvious. But it will not work with copying garbage collector. At least if it is invoked automatically.
+It seems to be trivial and obvious. But it will not work with copying garbage collector.
+At least if it is invoked automatically. 
 Initialization of "name" may start garbage collection and it will copy all live objects, including this object.
-After it ,"this" pointer is not pointing to correct object any more. 
+After it, "this" pointer is not pointing to correct object any more. 
+So we have to protect "this" pointer:
 
-We should either always access objects through smart pointers (which are updated by GC).
-Either control invocation of GC: start it manually when we know that there are no direct references to garbage collectable 
-objects. Both alternatives are very inconvenient and error prone. 
+    class SomeClass : public GC::OBject
+    {
+         GC::String name;
+         GC::String ident;
+         
+       public:
+         void init(char const* nm, char const* id) { 
+             Pin ptr(this);
+             name = String::create(nm);
+             ident = String::create(id);
+         }
+     };
+
 
 Copying garbage collector has one more significant disadvantage: lack of finalization.
 It is consequence of its advantage: processing only live objects. So dead (unreachable) object are not processed and so not 
@@ -396,11 +408,11 @@ of cloned object:
     { 
         ...
         /**
-         * Mark object as reachable and recursively mark all references objects
-         * @param obj marked objects (may be NULL)
-         * @return copy of the object
+         * Deep copy
+         * @param obj cloned object
+         * @return cloned object 
          */
-        static Object* mark(Object* obj);
+        static Object* copy(Object* obj);
         ...
     };
 
@@ -408,7 +420,7 @@ of cloned object:
     {
         ...
         /**
-         * Recusrsively clone object
+         * Recursively clone object
          * @param allocator used allocator
          */
         virtual Object* clone() = 0;
@@ -420,7 +432,7 @@ of cloned object:
         ...
         Ref(Ref<T> const& ref) 
         {
-            obj = (T*)MemoryAllocator::mark(ref.obj);
+            obj = (T*)MemoryAllocator::copy(ref.obj);
         }
     };
 
@@ -428,8 +440,8 @@ of cloned object:
     class Var : Root
     {
         ...
-        virtual void mark() { 
-            obj = (T*)MemoryAllocator::mark(obj);
+        virtual void copy() { 
+            obj = (T*)MemoryAllocator::copy(obj);
         }
     };
 
@@ -448,7 +460,6 @@ of cloned object:
 
 Copying garbage collector is really  fast, because it is not using standard malloc/free. Testgc example shows about 8 times 
 better results with copying garbage collector than with mark&sweep garbage collector.
-But I can not suggest to use it, unless restrictions above are not considered as critical. 
 
 
 Let's now compare performance.

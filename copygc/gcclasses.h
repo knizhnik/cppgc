@@ -104,7 +104,7 @@ namespace GC
         { 
             ObjectArray* copy = new ((length-1)*sizeof(T*), allocator) ObjectArray(*this);
             memcpy(copy->body, body, length*sizeof(T*));
-            allocator->_mark((Object**)copy->body, length);
+            allocator->_copy((Object**)copy->body, length);
             return copy;
         }        
     };

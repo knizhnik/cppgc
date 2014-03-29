@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
     int maxHeight = argc > 2 ? atoi(argv[2]) : 15;
     time_t start = time(NULL);
     { 
-        GC::MemoryAllocator mem(1000*Mb, 1*Mb, -1, true);
+        GC::MemoryAllocator mem(1*Mb, 1*Mb, -1);
         GC::Var<Wood> wood = Wood::create(nTrees);
         
         for (int height = 1; height < maxHeight; height++) {     

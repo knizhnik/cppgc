@@ -196,7 +196,7 @@ int main() {
     }
     printf("Elapsed time std::shared_ptr: %ld\n", time(NULL) - start);
     {
-        GC::MemoryAllocator mem(10*Mb, 1*Mb, 1*Mb);
+        GC::MemoryAllocator mem(1*Mb, 1*Mb, 1*Mb);
         GC::ArrayVar<GCObject,liveObjects> objectRefs;
         start = time(NULL);
         for (size_t i = 0; i < totalObjects; i++) { 

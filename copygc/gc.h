@@ -8,30 +8,42 @@
 
 namespace GC
 {
+    class MemoryAllocator;
     class Object;
     class Root;
+    class Pin;
 
     /**
-     * Object header used by allocator to mark objects and set reference to object copy
+     * Memory allocation segment.
+     * Segment is a unit of memory taken from OS by memory allocator.
+     * Most of segments have fixed size (specified in MemoryAllocator constructor), but if user object
+     * is larger than this size, then larger segment is created.
+     * Unused segments are not deallocated, but linked in list to be reused in future.
+     * But it is true only for segments of standard size: large segments are not reused.
      */
-    struct ObjectHeader 
-    { 
-        Object* copy;
-        enum { GC_MARK = 1 };
-
-      public:
-        bool isMarked() const { 
-            return (size_t)copy & GC_MARK;
-        }
-        
-        Object* getCopy() const { 
-            return (Object*)((size_t)copy - GC_MARK);
-        }
-
-        void setCopy(Object* obj) { 
-            copy = (Object*)((size_t)obj + GC_MARK);
-        }
+    struct MemorySegment
+    {
+        enum Bitmask 
+        { 
+            PINNED_SEGMENT = 1, // segment contains pinned object
+            LARGE_SEGMENT  = 2, // segment of non-standard size
+            MASK = 3
+        };   
+        MemorySegment*   next;      // L1-list of segment | Bitmask
+        MemoryAllocator* owner;     // owner is needed to distinguish self objects from "foreign" objects.
     };
+
+    /**
+     * Object header used by allocator to mark objects and set reference to object copy.
+     * Header is allocated by allocator BEFORE object.
+     */
+    union ObjectHeader 
+    { 
+        enum { GC_COPIED = 1 }; // mark set during GC
+        size_t copy; // pointer to object copy | GC_COPIED
+        MemorySegment* segment; // reference to segment is needed to distinguish self objects from "foreign" objects.
+        double  align; // just for alignment of header
+    };    
 
     /**
      * Memory allocator class with implicit memory deallocation (garbage collector). 
@@ -59,20 +71,6 @@ namespace GC
         static size_t totalAllocated();
 
         /**
-         * Mark object as reachable and recursively mark all references objects
-         * @param obj marked objects (may be NULL)
-         * @return copy of the object
-         */
-        static Object* mark(Object* obj);
-
-        /**
-         * Mark array of objects.
-         * @param refs pointer to array of references. Elements will be replaced with copies.
-         * @param nRefs number of references
-         */
-        static void mark(Object** refs, size_t nRefs);
-
-        /**
          * Register root object. Registering root protects it and all referenced objects from GC.
          */
         static void registerRoot(Root* root);
@@ -81,6 +79,23 @@ namespace GC
          * Unregister root object. Make this object tree available for GC.
          */
         static void unregisterRoot(Root* root);
+
+        /**
+         * Pin object. Protect it from deallocation and copying by GC.
+         */
+        static void registerPin(Pin* pin);
+            
+        /**
+         * Unpin object. Make this object available for GC.
+         */
+        static void unregisterPin(Pin* pin);
+
+        /**
+         * Deep copy
+         * @param obj cloned object
+         * @return cloned object 
+         */
+        static Object* copy(Object* obj);
 
         /**
          * Explicitly starts garbage collection.
@@ -94,27 +109,40 @@ namespace GC
         
         /**
          * Create instance of memory allocator 
-         * @param memorySegmentSize size of memory segment managed by this allocator. Please notice that allocator creates one
-         * segment: current and copy. Them are changing their roles after each GC.
+         * @param segmentSize default size of memory allocation segment
          * @param gcStartThreshold total size of objects allocated since last GC after which allowGC() method initiates garbage collection
          * @param gcAutoStartThreshold  total size of objects allocated since last GC after which garbage collection is automatically started. 
-         * Please notice that you should not have any direct (C++) pointer to access object if you enable automatic start
-         * of copying garbage collection,because object caq n bemove at any momewnt of time.
-         * @param throwExceptionOnNoMemory throw std::bad_alloc exception in case of no-memory insteadof returning NULL
+         * Please notice that you should not have any unpinned direct (C++) pointers if you enable automatic start
+         * of copying garbage collection, because object can be mmoved during any allocation request.
          */
-        MemoryAllocator(size_t memorySegmentSize, size_t gcStartThreshold = 1024*1024, size_t gcAutoStartThreshold = (size_t)-1, 
-            bool throwExceptionOnNoMemory = false);
+        MemoryAllocator(size_t segmentSize = 1024*1024, size_t gcStartThreshold = 1024*1024, size_t gcAutoStartThreshold = (size_t)-1);
 
         /**
          * Deallocate all objects create by GC.
          */
         ~MemoryAllocator();
     
+    
+        /**
+         * Deep copy
+         * @param obj cloned object
+         * @return cloned object 
+         */
+        Object* _copy(Object* obj);
+        
+        /**
+         * Deep copy of object array elements
+         * @param refs pointer to array of references
+         * @param nRefs number of references
+         */
+        void _copy(Object** refs, size_t nRefs);
+
+
         // internal instance methods
         void  _registerRoot(Root* root);     
         void  _unregisterRoot(Root* root);        
-        Object*  _mark(Object* obj);
-        void  _mark(Object** refs, size_t nRefs);
+        void  _registerPin(Pin* pin);     
+        void  _unregisterPin(Pin* pin);        
         Object* _allocate(size_t size);
         void  _gc();
         void  _allowGC();
@@ -124,18 +152,18 @@ namespace GC
 
 
       private:
-        size_t  segmentSize;
-        size_t  used;
-        char*   segments[2];
-        int     currSegment;
-        size_t  allocated;
-        Root*   roots;
-        ObjectHeader* objects;
-        size_t  startThreshold;
-        size_t  autoStartThreshold;
-        bool    throwException;
+        size_t  defaultSegmentSize;
+        size_t  used;               // Size used in the current segment
+        MemorySegment* freeSegment; // L1 list of free segments
+        MemorySegment* usedSegment; // L1 list of used segments
+        size_t  allocated;          // Total allocated since last GC
+        Root*   roots;              // Object roots
+        Pin*    pinnedObjects;      // Pinned objects
+        size_t  startThreshold;     // Total size of allocated objects since last GC after which allocGC() method start garbage collection
+        size_t  autoStartThreshold; // Total size of allocated objects since last GC after GC is automatically started
+        Object* clonedObject;       // Not null and points to original object when object is cloned during GC
 
-        static ThreadContext<MemoryAllocator> ctx;
+        static ThreadContext<MemoryAllocator> ctx; // Context to locate current memory allocator
     };
 
     /**
@@ -162,7 +190,7 @@ namespace GC
         }
 
         /**
-         * Redefined operator new for all derived classes with varying  size
+         * Redefined operator new for all derived classes with varying size
          * @param allocator allocator to be used
          */
         void* operator new(size_t fixedSize, size_t varyingSize, MemoryAllocator* allocator)
@@ -171,7 +199,7 @@ namespace GC
         }
 
         /**
-         * Redefined operator new for all derived classes with varying  size
+         * Redefined operator new for all derived classes with varying size
          */
         void* operator new(size_t fixedSize, size_t varyingSize)
         { 
@@ -188,8 +216,12 @@ namespace GC
       protected:
         friend class MemoryAllocator;
         
+        ObjectHeader* getHeader() const { 
+            return (ObjectHeader*)this - 1;
+        }
+
         /**
-         * Recusrsively clone object
+         * Recursively clone object
          * @param allocator used allocator
          */
         virtual Object* clone(MemoryAllocator* allocator) = 0;
@@ -197,7 +229,7 @@ namespace GC
 
     /**
      * Smart pointer class.
-     * This class is used to implicitly mark accessible objects.
+     * This class is used to recursively copy referenced objects.
      * You should use this class instead of normal C++ pointers and references in all garbage collected classes 
      */
     template<class T>
@@ -243,11 +275,11 @@ namespace GC
         Ref(T const* ptr = NULL) : obj((T*)ptr) {}
 
         /**
-         * Copy constructor marks referenced objects using current allocator (if any)
+         * Copy constructor performs deep copy of referenced objects using current allocator (if any)
          */         
-        Ref(Ref<T> const& ref) 
+        Ref(Ref<T>& ref) 
         {
-            obj = (T*)MemoryAllocator::mark(ref.obj);
+            obj = ref.obj = (T*)MemoryAllocator::copy(ref.obj); // we need to update original copy for pinned objects
         }
     };
 
@@ -262,10 +294,10 @@ namespace GC
         Root* next; // roots are linked in L1 list
         
         /**
-         * Mark root object
+         * Deep copy of root object
          * @param allocator memory allocator
          */
-        virtual void mark(MemoryAllocator* allocator) = 0;
+        virtual void copy(MemoryAllocator* allocator) = 0;
 
         /**
          * Register objects tree root in the current memory allocator
@@ -332,13 +364,36 @@ namespace GC
             return obj != other.obj;
         }
         
-        virtual void mark(MemoryAllocator* allocator) { 
-            obj = (T*)allocator->_mark(obj);
+        virtual void copy(MemoryAllocator* allocator) { 
+            obj = (T*)allocator->_copy(obj);
         }
+
 
         Var(T* ptr = NULL) : obj(ptr) {}
 
         Var(Var<T> const& var) : obj(var.obj) {}
+    };
+    
+    /**
+     * Class protecting object referenced by direct C++ pointer (like "this") from GC.
+     * Pinned object can not be deallocated or copied.
+     */
+    class Pin 
+    {
+        friend class MemoryAllocator;
+
+        Pin* next;
+        Object* obj;
+        
+      public:
+        Pin(Object* ptr) : obj(ptr) 
+        {
+            MemoryAllocator::registerPin(this);
+        }
+        ~Pin()
+        {
+            MemoryAllocator::unregisterPin(this);
+        }
     };
     
     /**
@@ -368,8 +423,8 @@ namespace GC
             }
         }
 
-        virtual void mark(MemoryAllocator* allocator) { 
-            allocator->_mark((Object**)array, size);
+        virtual void copy(MemoryAllocator* allocator) { 
+            allocator->_copy((Object**)array, size);
         }
     };
 
@@ -444,8 +499,8 @@ namespace GC
             delete[] array;
         }
 
-        virtual void mark(MemoryAllocator* allocator) { 
-            allocator->_mark((Object**)array, used);
+        virtual void copy(MemoryAllocator* allocator) { 
+            allocator->_copy((Object**)array, used);
         }
     };
 };    
