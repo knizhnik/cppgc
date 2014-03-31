@@ -81,6 +81,7 @@ uninstall:
 	cd $(LIBSPATH); rm -f $(GC_LIB) 
 
 clean: 
+	make -C copygc clean
 	rm -f *.o *.a *.so *.so.* $(GC_EXAMPLES) 
 
 tgz: clean
