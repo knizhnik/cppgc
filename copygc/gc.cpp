@@ -207,7 +207,7 @@ namespace GC
         for (Pin* pin = pinnedObjects; pin != NULL; pin = pin->next) { 
             (void)_copy(pin->obj);
         }
-        // And finally copy and andject all roots
+        // And finally copy and adjust all roots
         for (Root* root = roots; root != NULL; root = root->next) { 
             root->copy(this); 
         }

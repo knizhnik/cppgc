@@ -460,6 +460,7 @@ of cloned object:
 
 Copying garbage collector is really  fast, because it is not using standard malloc/free. Testgc example shows about 8 times 
 better results with copying garbage collector than with mark&sweep garbage collector.
+But lack of finalization and necessity to pin object are also significant drawbacks.
 
 
 Let's now compare performance.
