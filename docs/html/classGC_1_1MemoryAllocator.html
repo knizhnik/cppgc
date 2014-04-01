@@ -89,12 +89,15 @@ void *&#160;</td><td class="memItemRight" valign="bottom"><b>_allocate</b> (size
 void&#160;</td><td class="memItemRight" valign="bottom"><b>_gc</b> ()</td></tr>
 <tr><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a98de9d4952cbabc218592b1ce8476499"></a><!-- doxytag: member="GC::MemoryAllocator::_allowGC" ref="a98de9d4952cbabc218592b1ce8476499" args="()" -->
 void&#160;</td><td class="memItemRight" valign="bottom"><b>_allowGC</b> ()</td></tr>
+<tr><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a1642017faca83dd7faa76d10c4bd34e9"></a><!-- doxytag: member="GC::MemoryAllocator::_visit" ref="a1642017faca83dd7faa76d10c4bd34e9" args="(AnyWeakRef *wref)" -->
+void&#160;</td><td class="memItemRight" valign="bottom"><b>_visit</b> (<a class="el" href="classGC_1_1AnyWeakRef.html">AnyWeakRef</a> *wref)</td></tr>
 <tr><td colspan="2"><h2><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classGC_1_1MemoryAllocator.html">MemoryAllocator</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGC_1_1MemoryAllocator.html#a3d3061ec3d80a6fea0dc1a261bbeaf0f">getCurrent</a> ()</td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">static void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGC_1_1MemoryAllocator.html#a7d92e131ec91a1d9b8451b8aa36b4b18">allocate</a> (size_t size)</td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGC_1_1MemoryAllocator.html#a80e339bd08a6c99b79b10faccb1db790">mark</a> (<a class="el" href="classGC_1_1Object.html">Object</a> *obj)</td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGC_1_1MemoryAllocator.html#a5cf7971149402426e88df6ee1bcc744a">mark</a> (<a class="el" href="classGC_1_1Object.html">Object</a> **refs, size_t nRefs)</td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGC_1_1MemoryAllocator.html#a2fdfc6a6d99debb107a577bfd0cb4b4d">visit</a> (<a class="el" href="classGC_1_1AnyWeakRef.html">AnyWeakRef</a> *wref)</td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGC_1_1MemoryAllocator.html#ac59febdb842cfb3cf74218de723bdd73">registerRoot</a> (<a class="el" href="classGC_1_1Root.html">Root</a> *root)</td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGC_1_1MemoryAllocator.html#a0a8799f8a630efc4cc4dc1be22da005e">unregisterRoot</a> (<a class="el" href="classGC_1_1Root.html">Root</a> *root)</td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGC_1_1MemoryAllocator.html#a020bb1cb28853a3aaf2c7e844c19fb5b">gc</a> ()</td></tr>
@@ -338,6 +341,30 @@ class&#160;</td><td class="memItemRight" valign="bottom"><b>Object</b></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a2fdfc6a6d99debb107a577bfd0cb4b4d"></a><!-- doxytag: member="GC::MemoryAllocator::visit" ref="a2fdfc6a6d99debb107a577bfd0cb4b4d" args="(AnyWeakRef *wref)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void <a class="el" href="classGC_1_1MemoryAllocator.html#a2fdfc6a6d99debb107a577bfd0cb4b4d">GC::MemoryAllocator::visit</a> </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classGC_1_1AnyWeakRef.html">AnyWeakRef</a> *&#160;</td>
+          <td class="paramname"><em>wref</em></td><td>)</td>
+          <td><code> [static]</code></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+<p>Visit weak reference. Garbage collector links all weak references in list and after mark phase reset those of them non pointing to live objects. Weak referenced objects are not traversed by GC. </p>
+<dl class="params"><dt><b>Parameters:</b></dt><dd>
+  <table class="params">
+    <tr><td class="paramname">wref</td><td>weak reference </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li><a class="el" href="gc_8h_source.html">gc.h</a></li>
 </ul>
@@ -345,7 +372,7 @@ class&#160;</td><td class="memItemRight" valign="bottom"><b>Object</b></td></tr>
 
 
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Mar 23 2014 10:52:25 for CppGC by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Apr 1 2014 12:56:15 for CppGC by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.7.6.1
 </small></address>

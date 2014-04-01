@@ -70,6 +70,9 @@ mallocbench: mallocbench.o $(GC_LIB)
 mallocbench.o: samples/mallocbench.cpp $(GC_INCS)
 	$(CC) $(CFLAGS) -std=c++0x samples/mallocbench.cpp
 
+documentation:
+	doxygen doxygen.cfg
+
 install: library
 	mkdir -p $(INCSPATH)
 	cp $(GC_INCS) $(INCSPATH)

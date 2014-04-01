@@ -10,6 +10,7 @@ namespace GC
 {
     class Object;
     class Root;
+    class AnyWeakRef;
 
     /**
      * Invoke copy constructors of Ref<T> class to mark referenced objects
@@ -62,6 +63,14 @@ namespace GC
         static void mark(Object** refs, size_t nRefs);
 
         /**
+         * Visit weak reference. Garbage collector links all weak references in list and after mark phase reset 
+         * those of them non pointing to live objects.
+         * Weak referenced objects are not traversed by GC.
+         * @param wref weak reference
+         */
+        static void visit(AnyWeakRef* wref);
+
+        /**
          * Register root object. Registering root protects it and all referenced objects from GC.
          */
         static void registerRoot(Root* root);
@@ -102,6 +111,7 @@ namespace GC
         void* _allocate(size_t size);
         void  _gc();
         void  _allowGC();
+        void _visit(AnyWeakRef* wref);
 
       private:
         void markPhase();
@@ -111,6 +121,7 @@ namespace GC
         size_t  allocated;
         Root*   roots;
         ObjectHeader* objects;
+        AnyWeakRef* weakReferences;
         size_t  startThreshold;
         size_t  autoStartThreshold;
 
@@ -221,6 +232,71 @@ namespace GC
         Ref(Ref<T> const& ref) : obj(ref.obj) {
             MemoryAllocator::mark(obj);
         }
+    };
+
+    /**
+     * Weak reference base class.
+     * Weak references are not preventing GC from deallocation of object.
+     * If referenced object is deallocated, weak reference is reset to NULL.
+     */
+    class AnyWeakRef 
+    {
+        friend class MemoryAllocator;
+      protected:
+        AnyWeakRef* next;
+        Object*     obj;
+        
+        AnyWeakRef(AnyWeakRef const& other) : obj(other.obj) { 
+            MemoryAllocator::visit(this);
+        }
+        AnyWeakRef(Object const* ref) : obj((Object*)ref) {}
+    };
+            
+    /**
+     * Weak reference class.
+     * It should be used instead of Ref<T> class in garbage collectable classes for references which should 
+     * not prevent GC from deallocation of object.
+     * If referenced object is deallocated, weak reference is reset to NULL.
+     */
+    template<class T>
+    class WeakRef : public AnyWeakRef 
+    {
+      public:
+        T& operator*() { 
+            return *(T*)obj;
+        }
+        T const& operator*() const { 
+            return *(T*)obj;
+        }
+        T* operator->() { 
+            return (T*)obj; 
+        }
+        T const* operator->() const { 
+            return (T*)obj; 
+        }
+        operator T*() { 
+            return (T*)obj;
+        }
+        operator T const*() const { 
+            return (T*)obj;
+        }
+        T* operator = (T const* val) {
+            return obj = (Object*)val;            
+        }
+        bool operator == (T const* other) { 
+            return obj == other;
+        }
+        bool operator == (Ref<T> const& other) { 
+            return obj == other.obj;
+        }
+        bool operator != (T const* other) { 
+            return obj != other;
+        }
+        bool operator != (Ref<T> const& other) { 
+            return obj != other.obj;
+        }
+        
+        WeakRef(T const* ptr = NULL) : AnyWeakRef(ptr) {}
     };
 
     /**

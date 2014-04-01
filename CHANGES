@@ -4,4 +4,5 @@ Initial version
 
 --- Release version 1.02 (01.04.2014) -------------------------------------
 
-Multisegment implementation of copying garbage collector
+1. Multisegment implementation of copying garbage collector
+2. Support weak references

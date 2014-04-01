@@ -66,9 +66,10 @@
 <a name="l00010"></a>00010 {
 <a name="l00011"></a>00011     <span class="keyword">class </span>Object;
 <a name="l00012"></a>00012     <span class="keyword">class </span>Root;
-<a name="l00013"></a>00013 
-<a name="l00017"></a>00017 <span class="preprocessor">    #define GC_MARK(Class) Class(*this)</span>
-<a name="l00018"></a>00018 <span class="preprocessor"></span>
+<a name="l00013"></a>00013     <span class="keyword">class </span>AnyWeakRef;
+<a name="l00014"></a>00014 
+<a name="l00018"></a>00018 <span class="preprocessor">    #define GC_MARK(Class) Class(*this)</span>
+<a name="l00019"></a>00019 <span class="preprocessor"></span>
 <a name="l00023"></a><a class="code" href="structGC_1_1ObjectHeader.html">00023</a>     <span class="keyword">struct </span><a class="code" href="structGC_1_1ObjectHeader.html">ObjectHeader</a> 
 <a name="l00024"></a>00024     { 
 <a name="l00025"></a>00025         <a class="code" href="structGC_1_1ObjectHeader.html">ObjectHeader</a>* next;
@@ -90,300 +91,358 @@
 <a name="l00057"></a>00057 
 <a name="l00063"></a>00063         <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1MemoryAllocator.html#a80e339bd08a6c99b79b10faccb1db790">mark</a>(<a class="code" href="classGC_1_1Object.html">Object</a>** refs, <span class="keywordtype">size_t</span> nRefs);
 <a name="l00064"></a>00064 
-<a name="l00068"></a>00068         <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1MemoryAllocator.html#ac59febdb842cfb3cf74218de723bdd73">registerRoot</a>(<a class="code" href="classGC_1_1Root.html">Root</a>* root);
-<a name="l00069"></a>00069             
-<a name="l00073"></a>00073         <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1MemoryAllocator.html#a0a8799f8a630efc4cc4dc1be22da005e">unregisterRoot</a>(<a class="code" href="classGC_1_1Root.html">Root</a>* root);
-<a name="l00074"></a>00074 
-<a name="l00078"></a>00078         <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1MemoryAllocator.html#a020bb1cb28853a3aaf2c7e844c19fb5b">gc</a>();
-<a name="l00079"></a>00079 
-<a name="l00083"></a>00083         <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1MemoryAllocator.html#ad588fbbad09bb17662a3f3a0adfd3a88">allowGC</a>();
-<a name="l00084"></a>00084         
-<a name="l00091"></a>00091         <a class="code" href="classGC_1_1MemoryAllocator.html#a78e0904f98fc08efcc684aff38a420d7">MemoryAllocator</a>(<span class="keywordtype">size_t</span> gcStartThreshold = 1024*1024, <span class="keywordtype">size_t</span> gcAutoStartThreshold = (<span class="keywordtype">size_t</span>)-1);
-<a name="l00092"></a>00092 
-<a name="l00096"></a>00096         <a class="code" href="classGC_1_1MemoryAllocator.html#a9f62e62cfc72cfb2d85d37c040a7ad26">~MemoryAllocator</a>();
-<a name="l00097"></a>00097     
-<a name="l00098"></a>00098         <span class="comment">// internal instance methods</span>
-<a name="l00099"></a>00099         <span class="keywordtype">void</span>  _registerRoot(<a class="code" href="classGC_1_1Root.html">Root</a>* root);     
-<a name="l00100"></a>00100         <span class="keywordtype">void</span>  _unregisterRoot(<a class="code" href="classGC_1_1Root.html">Root</a>* root);        
-<a name="l00101"></a>00101         <span class="keywordtype">void</span>  _mark(<a class="code" href="classGC_1_1Object.html">Object</a>* obj);
-<a name="l00102"></a>00102         <span class="keywordtype">void</span>  _mark(<a class="code" href="classGC_1_1Object.html">Object</a>** refs, <span class="keywordtype">size_t</span> nRefs);
-<a name="l00103"></a>00103         <span class="keywordtype">void</span>* _allocate(<span class="keywordtype">size_t</span> size);
-<a name="l00104"></a>00104         <span class="keywordtype">void</span>  _gc();
-<a name="l00105"></a>00105         <span class="keywordtype">void</span>  _allowGC();
-<a name="l00106"></a>00106 
-<a name="l00107"></a>00107       <span class="keyword">private</span>:
-<a name="l00108"></a>00108         <span class="keywordtype">void</span> markPhase();
-<a name="l00109"></a>00109         <span class="keywordtype">void</span> sweepPhase();
-<a name="l00110"></a>00110 
-<a name="l00111"></a>00111       <span class="keyword">private</span>:
-<a name="l00112"></a>00112         <span class="keywordtype">size_t</span>  allocated;
-<a name="l00113"></a>00113         <a class="code" href="classGC_1_1Root.html">Root</a>*   roots;
-<a name="l00114"></a>00114         <a class="code" href="structGC_1_1ObjectHeader.html">ObjectHeader</a>* objects;
-<a name="l00115"></a>00115         <span class="keywordtype">size_t</span>  startThreshold;
-<a name="l00116"></a>00116         <span class="keywordtype">size_t</span>  autoStartThreshold;
-<a name="l00117"></a>00117 
-<a name="l00118"></a>00118         <span class="keyword">static</span> <a class="code" href="classGC_1_1ThreadContext.html">ThreadContext&lt;MemoryAllocator&gt;</a> ctx;
-<a name="l00119"></a>00119     };
-<a name="l00120"></a>00120 
-<a name="l00124"></a><a class="code" href="classGC_1_1Object.html">00124</a>     <span class="keyword">class </span><a class="code" href="classGC_1_1Object.html">Object</a> 
-<a name="l00125"></a>00125     {
-<a name="l00126"></a>00126       <span class="keyword">public</span>:
-<a name="l00130"></a><a class="code" href="classGC_1_1Object.html#a708211af5a07809ad98678179cd6ab96">00130</a>         <span class="keywordtype">void</span>* <a class="code" href="classGC_1_1Object.html#a708211af5a07809ad98678179cd6ab96">operator new</a>(<span class="keywordtype">size_t</span> size) 
-<a name="l00131"></a>00131         { 
-<a name="l00132"></a>00132             <span class="keywordflow">return</span> <a class="code" href="classGC_1_1MemoryAllocator.html#a7d92e131ec91a1d9b8451b8aa36b4b18">MemoryAllocator::allocate</a>(size);
-<a name="l00133"></a>00133         }
-<a name="l00134"></a>00134 
-<a name="l00138"></a><a class="code" href="classGC_1_1Object.html#a50ec99ee2ac5b3f7a8390a75ad1e1814">00138</a>         <span class="keywordtype">void</span>* <a class="code" href="classGC_1_1Object.html#a708211af5a07809ad98678179cd6ab96">operator new</a>(<span class="keywordtype">size_t</span> fixedSize, <span class="keywordtype">size_t</span> varyingSize)
-<a name="l00139"></a>00139         { 
-<a name="l00140"></a>00140             <span class="keywordflow">return</span> <a class="code" href="classGC_1_1MemoryAllocator.html#a7d92e131ec91a1d9b8451b8aa36b4b18">MemoryAllocator::allocate</a>(fixedSize + varyingSize);
-<a name="l00141"></a>00141         }
-<a name="l00142"></a>00142 
-<a name="l00147"></a><a class="code" href="classGC_1_1Object.html#a6e7f3c0b8e4060d76d23d9ddf5e1015c">00147</a>         <span class="keywordtype">void</span> <a class="code" href="classGC_1_1Object.html#a6e7f3c0b8e4060d76d23d9ddf5e1015c">operator delete</a>(<span class="keywordtype">void</span>* obj) {
-<a name="l00148"></a>00148             free((<a class="code" href="structGC_1_1ObjectHeader.html">ObjectHeader</a>*)obj - 1); 
-<a name="l00149"></a>00149         } 
-<a name="l00150"></a>00150         <span class="keywordtype">void</span> <a class="code" href="classGC_1_1Object.html#a6e7f3c0b8e4060d76d23d9ddf5e1015c">operator delete</a>(<span class="keywordtype">void</span>* obj, <span class="keywordtype">size_t</span>) { 
-<a name="l00151"></a>00151             free((<a class="code" href="structGC_1_1ObjectHeader.html">ObjectHeader</a>*)obj - 1);             
-<a name="l00152"></a>00152         } 
-<a name="l00153"></a>00153 
-<a name="l00154"></a>00154       <span class="keyword">protected</span>:
-<a name="l00155"></a>00155         <span class="keyword">friend</span> <span class="keyword">class </span>MemoryAllocator;
-<a name="l00156"></a>00156         
-<a name="l00160"></a><a class="code" href="classGC_1_1Object.html#afd394cc33942cc10213926e5b80275b0">00160</a>         <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1Object.html#afd394cc33942cc10213926e5b80275b0">mark</a>(<a class="code" href="classGC_1_1MemoryAllocator.html">MemoryAllocator</a>* allocator) {}
-<a name="l00161"></a>00161 
-<a name="l00165"></a><a class="code" href="classGC_1_1Object.html#a745857deca276203c8d61845b86e1d95">00165</a>         <span class="keyword">virtual</span><a class="code" href="classGC_1_1Object.html#a745857deca276203c8d61845b86e1d95">~Object</a>() {}
-<a name="l00166"></a>00166 
-<a name="l00167"></a>00167         <a class="code" href="structGC_1_1ObjectHeader.html">ObjectHeader</a>* getHeader() { 
-<a name="l00168"></a>00168             <span class="keywordflow">return</span> (<a class="code" href="structGC_1_1ObjectHeader.html">ObjectHeader</a>*)<span class="keyword">this</span> - 1;
-<a name="l00169"></a>00169         }
-<a name="l00170"></a>00170     };
+<a name="l00071"></a>00071         <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1MemoryAllocator.html#a2fdfc6a6d99debb107a577bfd0cb4b4d">visit</a>(<a class="code" href="classGC_1_1AnyWeakRef.html">AnyWeakRef</a>* wref);
+<a name="l00072"></a>00072 
+<a name="l00076"></a>00076         <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1MemoryAllocator.html#ac59febdb842cfb3cf74218de723bdd73">registerRoot</a>(<a class="code" href="classGC_1_1Root.html">Root</a>* root);
+<a name="l00077"></a>00077             
+<a name="l00081"></a>00081         <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1MemoryAllocator.html#a0a8799f8a630efc4cc4dc1be22da005e">unregisterRoot</a>(<a class="code" href="classGC_1_1Root.html">Root</a>* root);
+<a name="l00082"></a>00082 
+<a name="l00086"></a>00086         <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1MemoryAllocator.html#a020bb1cb28853a3aaf2c7e844c19fb5b">gc</a>();
+<a name="l00087"></a>00087 
+<a name="l00091"></a>00091         <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1MemoryAllocator.html#ad588fbbad09bb17662a3f3a0adfd3a88">allowGC</a>();
+<a name="l00092"></a>00092         
+<a name="l00099"></a>00099         <a class="code" href="classGC_1_1MemoryAllocator.html#a78e0904f98fc08efcc684aff38a420d7">MemoryAllocator</a>(<span class="keywordtype">size_t</span> gcStartThreshold = 1024*1024, <span class="keywordtype">size_t</span> gcAutoStartThreshold = (<span class="keywordtype">size_t</span>)-1);
+<a name="l00100"></a>00100 
+<a name="l00104"></a>00104         <a class="code" href="classGC_1_1MemoryAllocator.html#a9f62e62cfc72cfb2d85d37c040a7ad26">~MemoryAllocator</a>();
+<a name="l00105"></a>00105     
+<a name="l00106"></a>00106         <span class="comment">// internal instance methods</span>
+<a name="l00107"></a>00107         <span class="keywordtype">void</span>  _registerRoot(<a class="code" href="classGC_1_1Root.html">Root</a>* root);     
+<a name="l00108"></a>00108         <span class="keywordtype">void</span>  _unregisterRoot(<a class="code" href="classGC_1_1Root.html">Root</a>* root);        
+<a name="l00109"></a>00109         <span class="keywordtype">void</span>  _mark(<a class="code" href="classGC_1_1Object.html">Object</a>* obj);
+<a name="l00110"></a>00110         <span class="keywordtype">void</span>  _mark(<a class="code" href="classGC_1_1Object.html">Object</a>** refs, <span class="keywordtype">size_t</span> nRefs);
+<a name="l00111"></a>00111         <span class="keywordtype">void</span>* _allocate(<span class="keywordtype">size_t</span> size);
+<a name="l00112"></a>00112         <span class="keywordtype">void</span>  _gc();
+<a name="l00113"></a>00113         <span class="keywordtype">void</span>  _allowGC();
+<a name="l00114"></a>00114         <span class="keywordtype">void</span> _visit(<a class="code" href="classGC_1_1AnyWeakRef.html">AnyWeakRef</a>* wref);
+<a name="l00115"></a>00115 
+<a name="l00116"></a>00116       <span class="keyword">private</span>:
+<a name="l00117"></a>00117         <span class="keywordtype">void</span> markPhase();
+<a name="l00118"></a>00118         <span class="keywordtype">void</span> sweepPhase();
+<a name="l00119"></a>00119 
+<a name="l00120"></a>00120       <span class="keyword">private</span>:
+<a name="l00121"></a>00121         <span class="keywordtype">size_t</span>  allocated;
+<a name="l00122"></a>00122         <a class="code" href="classGC_1_1Root.html">Root</a>*   roots;
+<a name="l00123"></a>00123         <a class="code" href="structGC_1_1ObjectHeader.html">ObjectHeader</a>* objects;
+<a name="l00124"></a>00124         <a class="code" href="classGC_1_1AnyWeakRef.html">AnyWeakRef</a>* weakReferences;
+<a name="l00125"></a>00125         <span class="keywordtype">size_t</span>  startThreshold;
+<a name="l00126"></a>00126         <span class="keywordtype">size_t</span>  autoStartThreshold;
+<a name="l00127"></a>00127 
+<a name="l00128"></a>00128         <span class="keyword">static</span> <a class="code" href="classGC_1_1ThreadContext.html">ThreadContext&lt;MemoryAllocator&gt;</a> ctx;
+<a name="l00129"></a>00129     };
+<a name="l00130"></a>00130 
+<a name="l00134"></a><a class="code" href="classGC_1_1Object.html">00134</a>     <span class="keyword">class </span><a class="code" href="classGC_1_1Object.html">Object</a> 
+<a name="l00135"></a>00135     {
+<a name="l00136"></a>00136       <span class="keyword">public</span>:
+<a name="l00140"></a><a class="code" href="classGC_1_1Object.html#a708211af5a07809ad98678179cd6ab96">00140</a>         <span class="keywordtype">void</span>* <a class="code" href="classGC_1_1Object.html#a708211af5a07809ad98678179cd6ab96">operator new</a>(<span class="keywordtype">size_t</span> size) 
+<a name="l00141"></a>00141         { 
+<a name="l00142"></a>00142             <span class="keywordflow">return</span> <a class="code" href="classGC_1_1MemoryAllocator.html#a7d92e131ec91a1d9b8451b8aa36b4b18">MemoryAllocator::allocate</a>(size);
+<a name="l00143"></a>00143         }
+<a name="l00144"></a>00144 
+<a name="l00148"></a><a class="code" href="classGC_1_1Object.html#a50ec99ee2ac5b3f7a8390a75ad1e1814">00148</a>         <span class="keywordtype">void</span>* <a class="code" href="classGC_1_1Object.html#a708211af5a07809ad98678179cd6ab96">operator new</a>(<span class="keywordtype">size_t</span> fixedSize, <span class="keywordtype">size_t</span> varyingSize)
+<a name="l00149"></a>00149         { 
+<a name="l00150"></a>00150             <span class="keywordflow">return</span> <a class="code" href="classGC_1_1MemoryAllocator.html#a7d92e131ec91a1d9b8451b8aa36b4b18">MemoryAllocator::allocate</a>(fixedSize + varyingSize);
+<a name="l00151"></a>00151         }
+<a name="l00152"></a>00152 
+<a name="l00157"></a><a class="code" href="classGC_1_1Object.html#a6e7f3c0b8e4060d76d23d9ddf5e1015c">00157</a>         <span class="keywordtype">void</span> <a class="code" href="classGC_1_1Object.html#a6e7f3c0b8e4060d76d23d9ddf5e1015c">operator delete</a>(<span class="keywordtype">void</span>* obj) {
+<a name="l00158"></a>00158             free((<a class="code" href="structGC_1_1ObjectHeader.html">ObjectHeader</a>*)obj - 1); 
+<a name="l00159"></a>00159         } 
+<a name="l00160"></a>00160         <span class="keywordtype">void</span> <a class="code" href="classGC_1_1Object.html#a6e7f3c0b8e4060d76d23d9ddf5e1015c">operator delete</a>(<span class="keywordtype">void</span>* obj, <span class="keywordtype">size_t</span>) { 
+<a name="l00161"></a>00161             free((<a class="code" href="structGC_1_1ObjectHeader.html">ObjectHeader</a>*)obj - 1);             
+<a name="l00162"></a>00162         } 
+<a name="l00163"></a>00163 
+<a name="l00164"></a>00164       <span class="keyword">protected</span>:
+<a name="l00165"></a>00165         <span class="keyword">friend</span> <span class="keyword">class </span>MemoryAllocator;
+<a name="l00166"></a>00166         
+<a name="l00170"></a><a class="code" href="classGC_1_1Object.html#afd394cc33942cc10213926e5b80275b0">00170</a>         <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1Object.html#afd394cc33942cc10213926e5b80275b0">mark</a>(<a class="code" href="classGC_1_1MemoryAllocator.html">MemoryAllocator</a>* allocator) {}
 <a name="l00171"></a>00171 
-<a name="l00177"></a>00177     <span class="keyword">template</span>&lt;<span class="keyword">class</span> T&gt;
-<a name="l00178"></a><a class="code" href="classGC_1_1Ref.html">00178</a>     <span class="keyword">class </span><a class="code" href="classGC_1_1Ref.html">Ref</a> 
-<a name="l00179"></a>00179     {
-<a name="l00180"></a>00180         T* obj;
+<a name="l00175"></a><a class="code" href="classGC_1_1Object.html#a745857deca276203c8d61845b86e1d95">00175</a>         <span class="keyword">virtual</span><a class="code" href="classGC_1_1Object.html#a745857deca276203c8d61845b86e1d95">~Object</a>() {}
+<a name="l00176"></a>00176 
+<a name="l00177"></a>00177         <a class="code" href="structGC_1_1ObjectHeader.html">ObjectHeader</a>* getHeader() { 
+<a name="l00178"></a>00178             <span class="keywordflow">return</span> (<a class="code" href="structGC_1_1ObjectHeader.html">ObjectHeader</a>*)<span class="keyword">this</span> - 1;
+<a name="l00179"></a>00179         }
+<a name="l00180"></a>00180     };
 <a name="l00181"></a>00181 
-<a name="l00182"></a>00182       <span class="keyword">public</span>:
-<a name="l00183"></a>00183         T&amp; operator*() { 
-<a name="l00184"></a>00184             <span class="keywordflow">return</span> *obj;
-<a name="l00185"></a>00185         }
-<a name="l00186"></a>00186         T <span class="keyword">const</span>&amp; operator*()<span class="keyword"> const </span>{ 
-<a name="l00187"></a>00187             <span class="keywordflow">return</span> *obj;
-<a name="l00188"></a>00188         }
-<a name="l00189"></a>00189         T* operator-&gt;() { 
-<a name="l00190"></a>00190             <span class="keywordflow">return</span> obj; 
-<a name="l00191"></a>00191         }
-<a name="l00192"></a>00192         T <span class="keyword">const</span>* operator-&gt;()<span class="keyword"> const </span>{ 
-<a name="l00193"></a>00193             <span class="keywordflow">return</span> obj; 
-<a name="l00194"></a>00194         }
-<a name="l00195"></a>00195         operator T*() { 
-<a name="l00196"></a>00196             <span class="keywordflow">return</span> obj;
-<a name="l00197"></a>00197         }
-<a name="l00198"></a>00198         operator T const*()<span class="keyword"> const </span>{ 
-<a name="l00199"></a>00199             <span class="keywordflow">return</span> obj;
-<a name="l00200"></a>00200         }
-<a name="l00201"></a>00201         T* operator = (T <span class="keyword">const</span>* val) {
-<a name="l00202"></a>00202             <span class="keywordflow">return</span> obj = (T*)val;            
-<a name="l00203"></a>00203         }
-<a name="l00204"></a>00204         <span class="keywordtype">bool</span> operator == (T <span class="keyword">const</span>* other) { 
-<a name="l00205"></a>00205             <span class="keywordflow">return</span> obj == other;
-<a name="l00206"></a>00206         }
-<a name="l00207"></a>00207         <span class="keywordtype">bool</span> operator == (<a class="code" href="classGC_1_1Ref.html">Ref&lt;T&gt;</a> <span class="keyword">const</span>&amp; other) { 
-<a name="l00208"></a>00208             <span class="keywordflow">return</span> obj == other.obj;
-<a name="l00209"></a>00209         }
-<a name="l00210"></a>00210         <span class="keywordtype">bool</span> operator != (T <span class="keyword">const</span>* other) { 
-<a name="l00211"></a>00211             <span class="keywordflow">return</span> obj != other;
-<a name="l00212"></a>00212         }
-<a name="l00213"></a>00213         <span class="keywordtype">bool</span> operator != (<a class="code" href="classGC_1_1Ref.html">Ref&lt;T&gt;</a> <span class="keyword">const</span>&amp; other) { 
-<a name="l00214"></a>00214             <span class="keywordflow">return</span> obj != other.obj;
-<a name="l00215"></a>00215         }
-<a name="l00216"></a>00216         
-<a name="l00217"></a>00217         <a class="code" href="classGC_1_1Ref.html">Ref</a>(T <span class="keyword">const</span>* ptr = NULL) : obj((T*)ptr) {}
-<a name="l00218"></a>00218 
-<a name="l00222"></a><a class="code" href="classGC_1_1Ref.html#a49ed6e9586a53cb088e972dc43f07256">00222</a>         <a class="code" href="classGC_1_1Ref.html#a49ed6e9586a53cb088e972dc43f07256">Ref</a>(<a class="code" href="classGC_1_1Ref.html">Ref&lt;T&gt;</a> <span class="keyword">const</span>&amp; ref) : obj(ref.obj) {
-<a name="l00223"></a>00223             <a class="code" href="classGC_1_1MemoryAllocator.html#a80e339bd08a6c99b79b10faccb1db790">MemoryAllocator::mark</a>(obj);
-<a name="l00224"></a>00224         }
-<a name="l00225"></a>00225     };
-<a name="l00226"></a>00226 
-<a name="l00230"></a><a class="code" href="classGC_1_1Root.html">00230</a>     <span class="keyword">class </span><a class="code" href="classGC_1_1Root.html">Root</a>
-<a name="l00231"></a>00231     {
-<a name="l00232"></a>00232         <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classGC_1_1MemoryAllocator.html">MemoryAllocator</a>;
-<a name="l00233"></a>00233 
-<a name="l00234"></a>00234       <span class="keyword">protected</span>:
-<a name="l00235"></a>00235         <a class="code" href="classGC_1_1Root.html">Root</a>* next; <span class="comment">// roots are linked in L1 list</span>
-<a name="l00236"></a>00236         
-<a name="l00241"></a>00241         <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1Root.html#a3c515a02938f8b135636b27adff70a62">mark</a>(<a class="code" href="classGC_1_1MemoryAllocator.html">MemoryAllocator</a>* allocator) = 0;
-<a name="l00242"></a>00242 
-<a name="l00246"></a><a class="code" href="classGC_1_1Root.html#a646d07ea6c313208649641e67d7fe5e6">00246</a>         <a class="code" href="classGC_1_1Root.html#a646d07ea6c313208649641e67d7fe5e6">Root</a>() 
-<a name="l00247"></a>00247         { 
-<a name="l00248"></a>00248             <a class="code" href="classGC_1_1MemoryAllocator.html#ac59febdb842cfb3cf74218de723bdd73">MemoryAllocator::registerRoot</a>(<span class="keyword">this</span>);
-<a name="l00249"></a>00249         }
-<a name="l00250"></a>00250         
-<a name="l00254"></a><a class="code" href="classGC_1_1Root.html#a74a192f3956c6b2138ce54a3931085ae">00254</a>         <a class="code" href="classGC_1_1Root.html#a74a192f3956c6b2138ce54a3931085ae">~Root</a>() 
-<a name="l00255"></a>00255         { 
-<a name="l00256"></a>00256             <a class="code" href="classGC_1_1MemoryAllocator.html#a0a8799f8a630efc4cc4dc1be22da005e">MemoryAllocator::unregisterRoot</a>(<span class="keyword">this</span>);
-<a name="l00257"></a>00257         }        
-<a name="l00258"></a>00258     };
-<a name="l00259"></a>00259 
-<a name="l00267"></a>00267     <span class="keyword">template</span>&lt;<span class="keyword">class</span> T&gt;
-<a name="l00268"></a><a class="code" href="classGC_1_1Var.html">00268</a>     <span class="keyword">class </span><a class="code" href="classGC_1_1Var.html">Var</a> : <a class="code" href="classGC_1_1Root.html">Root</a>
-<a name="l00269"></a>00269     {
-<a name="l00270"></a>00270         T* obj;
-<a name="l00271"></a>00271 
-<a name="l00272"></a>00272       <span class="keyword">public</span>:
-<a name="l00273"></a>00273         T&amp; operator*() { 
-<a name="l00274"></a>00274             <span class="keywordflow">return</span> *obj;
-<a name="l00275"></a>00275         }
-<a name="l00276"></a>00276         T <span class="keyword">const</span>&amp; operator*()<span class="keyword"> const </span>{ 
-<a name="l00277"></a>00277             <span class="keywordflow">return</span> *obj;
-<a name="l00278"></a>00278         }
-<a name="l00279"></a>00279         T* operator-&gt;() { 
-<a name="l00280"></a>00280             <span class="keywordflow">return</span> obj; 
-<a name="l00281"></a>00281         }
-<a name="l00282"></a>00282         T <span class="keyword">const</span>* operator-&gt;()<span class="keyword"> const </span>{ 
-<a name="l00283"></a>00283             <span class="keywordflow">return</span> obj; 
-<a name="l00284"></a>00284         }
-<a name="l00285"></a>00285         operator T*() { 
-<a name="l00286"></a>00286             <span class="keywordflow">return</span> obj;
-<a name="l00287"></a>00287         }
-<a name="l00288"></a>00288         operator T const*()<span class="keyword"> const </span>{ 
-<a name="l00289"></a>00289             <span class="keywordflow">return</span> obj;
-<a name="l00290"></a>00290         }
-<a name="l00291"></a>00291         T* operator = (T <span class="keyword">const</span>* val) {
-<a name="l00292"></a>00292             obj = (T*)val;
-<a name="l00293"></a>00293             <span class="keywordflow">return</span> val;
+<a name="l00187"></a>00187     <span class="keyword">template</span>&lt;<span class="keyword">class</span> T&gt;
+<a name="l00188"></a><a class="code" href="classGC_1_1Ref.html">00188</a>     <span class="keyword">class </span><a class="code" href="classGC_1_1Ref.html">Ref</a> 
+<a name="l00189"></a>00189     {
+<a name="l00190"></a>00190         T* obj;
+<a name="l00191"></a>00191 
+<a name="l00192"></a>00192       <span class="keyword">public</span>:
+<a name="l00193"></a>00193         T&amp; operator*() { 
+<a name="l00194"></a>00194             <span class="keywordflow">return</span> *obj;
+<a name="l00195"></a>00195         }
+<a name="l00196"></a>00196         T <span class="keyword">const</span>&amp; operator*()<span class="keyword"> const </span>{ 
+<a name="l00197"></a>00197             <span class="keywordflow">return</span> *obj;
+<a name="l00198"></a>00198         }
+<a name="l00199"></a>00199         T* operator-&gt;() { 
+<a name="l00200"></a>00200             <span class="keywordflow">return</span> obj; 
+<a name="l00201"></a>00201         }
+<a name="l00202"></a>00202         T <span class="keyword">const</span>* operator-&gt;()<span class="keyword"> const </span>{ 
+<a name="l00203"></a>00203             <span class="keywordflow">return</span> obj; 
+<a name="l00204"></a>00204         }
+<a name="l00205"></a>00205         operator T*() { 
+<a name="l00206"></a>00206             <span class="keywordflow">return</span> obj;
+<a name="l00207"></a>00207         }
+<a name="l00208"></a>00208         operator T const*()<span class="keyword"> const </span>{ 
+<a name="l00209"></a>00209             <span class="keywordflow">return</span> obj;
+<a name="l00210"></a>00210         }
+<a name="l00211"></a>00211         T* operator = (T <span class="keyword">const</span>* val) {
+<a name="l00212"></a>00212             <span class="keywordflow">return</span> obj = (T*)val;            
+<a name="l00213"></a>00213         }
+<a name="l00214"></a>00214         <span class="keywordtype">bool</span> operator == (T <span class="keyword">const</span>* other) { 
+<a name="l00215"></a>00215             <span class="keywordflow">return</span> obj == other;
+<a name="l00216"></a>00216         }
+<a name="l00217"></a>00217         <span class="keywordtype">bool</span> operator == (<a class="code" href="classGC_1_1Ref.html">Ref&lt;T&gt;</a> <span class="keyword">const</span>&amp; other) { 
+<a name="l00218"></a>00218             <span class="keywordflow">return</span> obj == other.obj;
+<a name="l00219"></a>00219         }
+<a name="l00220"></a>00220         <span class="keywordtype">bool</span> operator != (T <span class="keyword">const</span>* other) { 
+<a name="l00221"></a>00221             <span class="keywordflow">return</span> obj != other;
+<a name="l00222"></a>00222         }
+<a name="l00223"></a>00223         <span class="keywordtype">bool</span> operator != (<a class="code" href="classGC_1_1Ref.html">Ref&lt;T&gt;</a> <span class="keyword">const</span>&amp; other) { 
+<a name="l00224"></a>00224             <span class="keywordflow">return</span> obj != other.obj;
+<a name="l00225"></a>00225         }
+<a name="l00226"></a>00226         
+<a name="l00227"></a>00227         <a class="code" href="classGC_1_1Ref.html">Ref</a>(T <span class="keyword">const</span>* ptr = NULL) : obj((T*)ptr) {}
+<a name="l00228"></a>00228 
+<a name="l00232"></a><a class="code" href="classGC_1_1Ref.html#a49ed6e9586a53cb088e972dc43f07256">00232</a>         <a class="code" href="classGC_1_1Ref.html#a49ed6e9586a53cb088e972dc43f07256">Ref</a>(<a class="code" href="classGC_1_1Ref.html">Ref&lt;T&gt;</a> <span class="keyword">const</span>&amp; ref) : obj(ref.obj) {
+<a name="l00233"></a>00233             <a class="code" href="classGC_1_1MemoryAllocator.html#a80e339bd08a6c99b79b10faccb1db790">MemoryAllocator::mark</a>(obj);
+<a name="l00234"></a>00234         }
+<a name="l00235"></a>00235     };
+<a name="l00236"></a>00236 
+<a name="l00242"></a><a class="code" href="classGC_1_1AnyWeakRef.html">00242</a>     <span class="keyword">class </span><a class="code" href="classGC_1_1AnyWeakRef.html">AnyWeakRef</a> 
+<a name="l00243"></a>00243     {
+<a name="l00244"></a>00244         <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classGC_1_1MemoryAllocator.html">MemoryAllocator</a>;
+<a name="l00245"></a>00245       <span class="keyword">protected</span>:
+<a name="l00246"></a>00246         <a class="code" href="classGC_1_1AnyWeakRef.html">AnyWeakRef</a>* next;
+<a name="l00247"></a>00247         <a class="code" href="classGC_1_1Object.html">Object</a>*     obj;
+<a name="l00248"></a>00248         
+<a name="l00249"></a>00249         <a class="code" href="classGC_1_1AnyWeakRef.html">AnyWeakRef</a>(<a class="code" href="classGC_1_1AnyWeakRef.html">AnyWeakRef</a> <span class="keyword">const</span>&amp; other) : obj(other.obj) { 
+<a name="l00250"></a>00250             <a class="code" href="classGC_1_1MemoryAllocator.html#a2fdfc6a6d99debb107a577bfd0cb4b4d">MemoryAllocator::visit</a>(<span class="keyword">this</span>);
+<a name="l00251"></a>00251         }
+<a name="l00252"></a>00252         <a class="code" href="classGC_1_1AnyWeakRef.html">AnyWeakRef</a>(<a class="code" href="classGC_1_1Object.html">Object</a> <span class="keyword">const</span>* ref) : obj((<a class="code" href="classGC_1_1Object.html">Object</a>*)ref) {}
+<a name="l00253"></a>00253     };
+<a name="l00254"></a>00254             
+<a name="l00261"></a>00261     <span class="keyword">template</span>&lt;<span class="keyword">class</span> T&gt;
+<a name="l00262"></a><a class="code" href="classGC_1_1WeakRef.html">00262</a>     <span class="keyword">class </span><a class="code" href="classGC_1_1WeakRef.html">WeakRef</a> : <span class="keyword">public</span> <a class="code" href="classGC_1_1AnyWeakRef.html">AnyWeakRef</a> 
+<a name="l00263"></a>00263     {
+<a name="l00264"></a>00264       <span class="keyword">public</span>:
+<a name="l00265"></a>00265         T&amp; operator*() { 
+<a name="l00266"></a>00266             <span class="keywordflow">return</span> *(T*)obj;
+<a name="l00267"></a>00267         }
+<a name="l00268"></a>00268         T <span class="keyword">const</span>&amp; operator*()<span class="keyword"> const </span>{ 
+<a name="l00269"></a>00269             <span class="keywordflow">return</span> *(T*)obj;
+<a name="l00270"></a>00270         }
+<a name="l00271"></a>00271         T* operator-&gt;() { 
+<a name="l00272"></a>00272             <span class="keywordflow">return</span> (T*)obj; 
+<a name="l00273"></a>00273         }
+<a name="l00274"></a>00274         T <span class="keyword">const</span>* operator-&gt;()<span class="keyword"> const </span>{ 
+<a name="l00275"></a>00275             <span class="keywordflow">return</span> (T*)obj; 
+<a name="l00276"></a>00276         }
+<a name="l00277"></a>00277         operator T*() { 
+<a name="l00278"></a>00278             <span class="keywordflow">return</span> (T*)obj;
+<a name="l00279"></a>00279         }
+<a name="l00280"></a>00280         operator T const*()<span class="keyword"> const </span>{ 
+<a name="l00281"></a>00281             <span class="keywordflow">return</span> (T*)obj;
+<a name="l00282"></a>00282         }
+<a name="l00283"></a>00283         T* operator = (T <span class="keyword">const</span>* val) {
+<a name="l00284"></a>00284             <span class="keywordflow">return</span> obj = (<a class="code" href="classGC_1_1Object.html">Object</a>*)val;            
+<a name="l00285"></a>00285         }
+<a name="l00286"></a>00286         <span class="keywordtype">bool</span> operator == (T <span class="keyword">const</span>* other) { 
+<a name="l00287"></a>00287             <span class="keywordflow">return</span> obj == other;
+<a name="l00288"></a>00288         }
+<a name="l00289"></a>00289         <span class="keywordtype">bool</span> operator == (<a class="code" href="classGC_1_1Ref.html">Ref&lt;T&gt;</a> <span class="keyword">const</span>&amp; other) { 
+<a name="l00290"></a>00290             <span class="keywordflow">return</span> obj == other.obj;
+<a name="l00291"></a>00291         }
+<a name="l00292"></a>00292         <span class="keywordtype">bool</span> operator != (T <span class="keyword">const</span>* other) { 
+<a name="l00293"></a>00293             <span class="keywordflow">return</span> obj != other;
 <a name="l00294"></a>00294         }
-<a name="l00295"></a>00295         <span class="keywordtype">bool</span> operator == (T <span class="keyword">const</span>* other) { 
-<a name="l00296"></a>00296             <span class="keywordflow">return</span> obj == other;
+<a name="l00295"></a>00295         <span class="keywordtype">bool</span> operator != (<a class="code" href="classGC_1_1Ref.html">Ref&lt;T&gt;</a> <span class="keyword">const</span>&amp; other) { 
+<a name="l00296"></a>00296             <span class="keywordflow">return</span> obj != other.obj;
 <a name="l00297"></a>00297         }
-<a name="l00298"></a>00298         <span class="keywordtype">bool</span> operator == (<a class="code" href="classGC_1_1Var.html">Var&lt;T&gt;</a> <span class="keyword">const</span>&amp; other) { 
-<a name="l00299"></a>00299             <span class="keywordflow">return</span> obj == other.obj;
-<a name="l00300"></a>00300         }
-<a name="l00301"></a>00301         <span class="keywordtype">bool</span> operator != (T <span class="keyword">const</span>* other) { 
-<a name="l00302"></a>00302             <span class="keywordflow">return</span> obj != other;
-<a name="l00303"></a>00303         }
-<a name="l00304"></a>00304         <span class="keywordtype">bool</span> operator != (<a class="code" href="classGC_1_1Var.html">Var&lt;T&gt;</a> <span class="keyword">const</span>&amp; other) { 
-<a name="l00305"></a>00305             <span class="keywordflow">return</span> obj != other.obj;
-<a name="l00306"></a>00306         }
-<a name="l00307"></a>00307         
-<a name="l00308"></a><a class="code" href="classGC_1_1Var.html#aecf080f1839a8694bebd52e71f0a9ba9">00308</a>         <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1Var.html#aecf080f1839a8694bebd52e71f0a9ba9">mark</a>(<a class="code" href="classGC_1_1MemoryAllocator.html">MemoryAllocator</a>* allocator) { 
-<a name="l00309"></a>00309             allocator-&gt;_mark(obj);
-<a name="l00310"></a>00310         }
-<a name="l00311"></a>00311 
-<a name="l00312"></a>00312         <a class="code" href="classGC_1_1Var.html">Var</a>(T* ptr = NULL) : obj(ptr) {}
-<a name="l00313"></a>00313 
-<a name="l00314"></a>00314         Var(Var&lt;T&gt; <span class="keyword">const</span>&amp; var) : obj(var.obj) {}
-<a name="l00315"></a>00315     };
-<a name="l00316"></a>00316     
-<a name="l00320"></a>00320     <span class="keyword">template</span>&lt;<span class="keyword">class</span> T, <span class="keywordtype">size_t</span> size&gt;
-<a name="l00321"></a><a class="code" href="classGC_1_1ArrayVar.html">00321</a>     <span class="keyword">class </span><a class="code" href="classGC_1_1ArrayVar.html">ArrayVar</a> : <a class="code" href="classGC_1_1Root.html">Root</a>
-<a name="l00322"></a>00322     {
-<a name="l00323"></a>00323         T* array[size];
-<a name="l00324"></a>00324 
-<a name="l00325"></a>00325       <span class="keyword">public</span>:
-<a name="l00326"></a>00326         T*&amp; operator[](<span class="keywordtype">size_t</span> index) 
-<a name="l00327"></a>00327         { 
-<a name="l00328"></a>00328             assert(index &lt; size);
-<a name="l00329"></a>00329             <span class="keywordflow">return</span> array[index];
-<a name="l00330"></a>00330         }
-<a name="l00331"></a>00331         
-<a name="l00332"></a>00332         T* operator[](<span class="keywordtype">size_t</span> index)<span class="keyword"> const</span>
-<a name="l00333"></a>00333 <span class="keyword">        </span>{ 
-<a name="l00334"></a>00334             assert(index &lt; size);
-<a name="l00335"></a>00335             <span class="keywordflow">return</span> array[index];
-<a name="l00336"></a>00336         }        
-<a name="l00337"></a>00337 
-<a name="l00338"></a>00338         <a class="code" href="classGC_1_1ArrayVar.html">ArrayVar</a>() {
-<a name="l00339"></a>00339             <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; size; i++) { 
-<a name="l00340"></a>00340                 array[i] = NULL;
-<a name="l00341"></a>00341             }
-<a name="l00342"></a>00342         }
-<a name="l00343"></a>00343 
-<a name="l00344"></a><a class="code" href="classGC_1_1ArrayVar.html#a5f9c791e14b1f130722fd3f5b76bd581">00344</a>         <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1ArrayVar.html#a5f9c791e14b1f130722fd3f5b76bd581">mark</a>(<a class="code" href="classGC_1_1MemoryAllocator.html">MemoryAllocator</a>* allocator) { 
-<a name="l00345"></a>00345             allocator-&gt;_mark((<a class="code" href="classGC_1_1Object.html">Object</a>**)array, size);
-<a name="l00346"></a>00346         }
-<a name="l00347"></a>00347     };
-<a name="l00348"></a>00348 
-<a name="l00352"></a>00352     <span class="keyword">template</span>&lt;<span class="keyword">class</span> T&gt;
-<a name="l00353"></a><a class="code" href="classGC_1_1VectorVar.html">00353</a>     <span class="keyword">class </span><a class="code" href="classGC_1_1VectorVar.html">VectorVar</a> : <a class="code" href="classGC_1_1Root.html">Root</a>
-<a name="l00354"></a>00354     {
-<a name="l00355"></a>00355         T** array;
-<a name="l00356"></a>00356         <span class="keywordtype">size_t</span> used;
-<a name="l00357"></a>00357         <span class="keywordtype">size_t</span> allocated;
-<a name="l00358"></a>00358 
-<a name="l00359"></a>00359       <span class="keyword">public</span>:
-<a name="l00360"></a>00360         T*&amp; operator[](<span class="keywordtype">size_t</span> index) 
-<a name="l00361"></a>00361         { 
-<a name="l00362"></a>00362             assert(index &lt; used);
-<a name="l00363"></a>00363             <span class="keywordflow">return</span> array[index];
-<a name="l00364"></a>00364         }
-<a name="l00365"></a>00365         
-<a name="l00366"></a>00366         T* operator[](<span class="keywordtype">size_t</span> index)<span class="keyword"> const</span>
-<a name="l00367"></a>00367 <span class="keyword">        </span>{ 
-<a name="l00368"></a>00368             assert(index &lt; used);
-<a name="l00369"></a>00369             <span class="keywordflow">return</span> array[index];
-<a name="l00370"></a>00370         }        
-<a name="l00371"></a>00371 
-<a name="l00372"></a>00372         <span class="keywordtype">size_t</span> size()<span class="keyword"> const</span>
-<a name="l00373"></a>00373 <span class="keyword">        </span>{
-<a name="l00374"></a>00374             <span class="keywordflow">return</span> used;
+<a name="l00298"></a>00298         
+<a name="l00299"></a>00299         <a class="code" href="classGC_1_1WeakRef.html">WeakRef</a>(T <span class="keyword">const</span>* ptr = NULL) : <a class="code" href="classGC_1_1AnyWeakRef.html">AnyWeakRef</a>(ptr) {}
+<a name="l00300"></a>00300     };
+<a name="l00301"></a>00301 
+<a name="l00305"></a><a class="code" href="classGC_1_1Root.html">00305</a>     <span class="keyword">class </span><a class="code" href="classGC_1_1Root.html">Root</a>
+<a name="l00306"></a>00306     {
+<a name="l00307"></a>00307         <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classGC_1_1MemoryAllocator.html">MemoryAllocator</a>;
+<a name="l00308"></a>00308 
+<a name="l00309"></a>00309       <span class="keyword">protected</span>:
+<a name="l00310"></a>00310         <a class="code" href="classGC_1_1Root.html">Root</a>* next; <span class="comment">// roots are linked in L1 list</span>
+<a name="l00311"></a>00311         
+<a name="l00316"></a>00316         <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1Root.html#a3c515a02938f8b135636b27adff70a62">mark</a>(<a class="code" href="classGC_1_1MemoryAllocator.html">MemoryAllocator</a>* allocator) = 0;
+<a name="l00317"></a>00317 
+<a name="l00321"></a><a class="code" href="classGC_1_1Root.html#a646d07ea6c313208649641e67d7fe5e6">00321</a>         <a class="code" href="classGC_1_1Root.html#a646d07ea6c313208649641e67d7fe5e6">Root</a>() 
+<a name="l00322"></a>00322         { 
+<a name="l00323"></a>00323             <a class="code" href="classGC_1_1MemoryAllocator.html#ac59febdb842cfb3cf74218de723bdd73">MemoryAllocator::registerRoot</a>(<span class="keyword">this</span>);
+<a name="l00324"></a>00324         }
+<a name="l00325"></a>00325         
+<a name="l00329"></a><a class="code" href="classGC_1_1Root.html#a74a192f3956c6b2138ce54a3931085ae">00329</a>         <a class="code" href="classGC_1_1Root.html#a74a192f3956c6b2138ce54a3931085ae">~Root</a>() 
+<a name="l00330"></a>00330         { 
+<a name="l00331"></a>00331             <a class="code" href="classGC_1_1MemoryAllocator.html#a0a8799f8a630efc4cc4dc1be22da005e">MemoryAllocator::unregisterRoot</a>(<span class="keyword">this</span>);
+<a name="l00332"></a>00332         }        
+<a name="l00333"></a>00333     };
+<a name="l00334"></a>00334 
+<a name="l00342"></a>00342     <span class="keyword">template</span>&lt;<span class="keyword">class</span> T&gt;
+<a name="l00343"></a><a class="code" href="classGC_1_1Var.html">00343</a>     <span class="keyword">class </span><a class="code" href="classGC_1_1Var.html">Var</a> : <a class="code" href="classGC_1_1Root.html">Root</a>
+<a name="l00344"></a>00344     {
+<a name="l00345"></a>00345         T* obj;
+<a name="l00346"></a>00346 
+<a name="l00347"></a>00347       <span class="keyword">public</span>:
+<a name="l00348"></a>00348         T&amp; operator*() { 
+<a name="l00349"></a>00349             <span class="keywordflow">return</span> *obj;
+<a name="l00350"></a>00350         }
+<a name="l00351"></a>00351         T <span class="keyword">const</span>&amp; operator*()<span class="keyword"> const </span>{ 
+<a name="l00352"></a>00352             <span class="keywordflow">return</span> *obj;
+<a name="l00353"></a>00353         }
+<a name="l00354"></a>00354         T* operator-&gt;() { 
+<a name="l00355"></a>00355             <span class="keywordflow">return</span> obj; 
+<a name="l00356"></a>00356         }
+<a name="l00357"></a>00357         T <span class="keyword">const</span>* operator-&gt;()<span class="keyword"> const </span>{ 
+<a name="l00358"></a>00358             <span class="keywordflow">return</span> obj; 
+<a name="l00359"></a>00359         }
+<a name="l00360"></a>00360         operator T*() { 
+<a name="l00361"></a>00361             <span class="keywordflow">return</span> obj;
+<a name="l00362"></a>00362         }
+<a name="l00363"></a>00363         operator T const*()<span class="keyword"> const </span>{ 
+<a name="l00364"></a>00364             <span class="keywordflow">return</span> obj;
+<a name="l00365"></a>00365         }
+<a name="l00366"></a>00366         T* operator = (T <span class="keyword">const</span>* val) {
+<a name="l00367"></a>00367             obj = (T*)val;
+<a name="l00368"></a>00368             <span class="keywordflow">return</span> val;
+<a name="l00369"></a>00369         }
+<a name="l00370"></a>00370         <span class="keywordtype">bool</span> operator == (T <span class="keyword">const</span>* other) { 
+<a name="l00371"></a>00371             <span class="keywordflow">return</span> obj == other;
+<a name="l00372"></a>00372         }
+<a name="l00373"></a>00373         <span class="keywordtype">bool</span> operator == (<a class="code" href="classGC_1_1Var.html">Var&lt;T&gt;</a> <span class="keyword">const</span>&amp; other) { 
+<a name="l00374"></a>00374             <span class="keywordflow">return</span> obj == other.obj;
 <a name="l00375"></a>00375         }
-<a name="l00376"></a>00376 
-<a name="l00377"></a>00377         <span class="keywordtype">void</span> resize(<span class="keywordtype">size_t</span> newSize) 
-<a name="l00378"></a>00378         { 
-<a name="l00379"></a>00379             <span class="keywordtype">size_t</span> i;
-<a name="l00380"></a>00380             <span class="keywordflow">if</span> (newSize &gt; allocated) { 
-<a name="l00381"></a>00381                 allocated = allocated*2 &gt; newSize ? allocated*2 : newSize;
-<a name="l00382"></a>00382                 T** newArray = <span class="keyword">new</span> T*[allocated];
-<a name="l00383"></a>00383                 <span class="keywordflow">for</span> (i = 0; i &lt; used; i++) { 
-<a name="l00384"></a>00384                     newArray[i] = array[i];
-<a name="l00385"></a>00385                 }
-<a name="l00386"></a>00386                 <span class="keyword">delete</span>[] array;
-<a name="l00387"></a>00387                 array = newArray;
-<a name="l00388"></a>00388             }
-<a name="l00389"></a>00389             <span class="keywordflow">for</span> (i = used; i &lt; newSize; i++) { 
-<a name="l00390"></a>00390                 array[i] = NULL;
-<a name="l00391"></a>00391             }
-<a name="l00392"></a>00392             used = newSize;
-<a name="l00393"></a>00393         }
-<a name="l00394"></a>00394 
-<a name="l00395"></a>00395         <span class="keywordtype">void</span> push(T <span class="keyword">const</span>* obj) { 
-<a name="l00396"></a>00396             resize(used+1);
-<a name="l00397"></a>00397             array[used-1] = (T*)obj;
-<a name="l00398"></a>00398         }
+<a name="l00376"></a>00376         <span class="keywordtype">bool</span> operator != (T <span class="keyword">const</span>* other) { 
+<a name="l00377"></a>00377             <span class="keywordflow">return</span> obj != other;
+<a name="l00378"></a>00378         }
+<a name="l00379"></a>00379         <span class="keywordtype">bool</span> operator != (<a class="code" href="classGC_1_1Var.html">Var&lt;T&gt;</a> <span class="keyword">const</span>&amp; other) { 
+<a name="l00380"></a>00380             <span class="keywordflow">return</span> obj != other.obj;
+<a name="l00381"></a>00381         }
+<a name="l00382"></a>00382         
+<a name="l00383"></a><a class="code" href="classGC_1_1Var.html#aecf080f1839a8694bebd52e71f0a9ba9">00383</a>         <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1Var.html#aecf080f1839a8694bebd52e71f0a9ba9">mark</a>(<a class="code" href="classGC_1_1MemoryAllocator.html">MemoryAllocator</a>* allocator) { 
+<a name="l00384"></a>00384             allocator-&gt;_mark(obj);
+<a name="l00385"></a>00385         }
+<a name="l00386"></a>00386 
+<a name="l00387"></a>00387         <a class="code" href="classGC_1_1Var.html">Var</a>(T* ptr = NULL) : obj(ptr) {}
+<a name="l00388"></a>00388 
+<a name="l00389"></a>00389         Var(Var&lt;T&gt; <span class="keyword">const</span>&amp; var) : obj(var.obj) {}
+<a name="l00390"></a>00390     };
+<a name="l00391"></a>00391     
+<a name="l00395"></a>00395     <span class="keyword">template</span>&lt;<span class="keyword">class</span> T, <span class="keywordtype">size_t</span> size&gt;
+<a name="l00396"></a><a class="code" href="classGC_1_1ArrayVar.html">00396</a>     <span class="keyword">class </span><a class="code" href="classGC_1_1ArrayVar.html">ArrayVar</a> : <a class="code" href="classGC_1_1Root.html">Root</a>
+<a name="l00397"></a>00397     {
+<a name="l00398"></a>00398         T* array[size];
 <a name="l00399"></a>00399 
-<a name="l00400"></a>00400         T* pop() { 
-<a name="l00401"></a>00401             assert(used != 0);
-<a name="l00402"></a>00402             <span class="keywordflow">return</span> array[--used];
-<a name="l00403"></a>00403         }
-<a name="l00404"></a>00404 
-<a name="l00405"></a>00405         T* top()<span class="keyword"> const </span>{ 
-<a name="l00406"></a>00406             assert(used != 0);
-<a name="l00407"></a>00407             <span class="keywordflow">return</span> array[used-1];
-<a name="l00408"></a>00408         }
-<a name="l00409"></a>00409 
-<a name="l00410"></a>00410         <a class="code" href="classGC_1_1VectorVar.html">VectorVar</a>(<span class="keywordtype">size_t</span> reserve = 8) {
-<a name="l00411"></a>00411             used = 0;
-<a name="l00412"></a>00412             allocated = reserve;
-<a name="l00413"></a>00413             array = <span class="keyword">new</span> T*[reserve];
-<a name="l00414"></a>00414         }
-<a name="l00415"></a>00415 
-<a name="l00416"></a>00416         ~<a class="code" href="classGC_1_1VectorVar.html">VectorVar</a>() {
-<a name="l00417"></a>00417             <span class="keyword">delete</span>[] array;
-<a name="l00418"></a>00418         }
-<a name="l00419"></a>00419 
-<a name="l00420"></a><a class="code" href="classGC_1_1VectorVar.html#ae1ca94f94bd271c19f449a7f81312488">00420</a>         <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1VectorVar.html#ae1ca94f94bd271c19f449a7f81312488">mark</a>(<a class="code" href="classGC_1_1MemoryAllocator.html">MemoryAllocator</a>* allocator) { 
-<a name="l00421"></a>00421             allocator-&gt;_mark((<a class="code" href="classGC_1_1Object.html">Object</a>**)array, used);
-<a name="l00422"></a>00422         }
-<a name="l00423"></a>00423     };
-<a name="l00424"></a>00424 };    
-<a name="l00425"></a>00425 
-<a name="l00426"></a>00426 <span class="preprocessor">#endif</span>
-<a name="l00427"></a>00427 <span class="preprocessor"></span>        
+<a name="l00400"></a>00400       <span class="keyword">public</span>:
+<a name="l00401"></a>00401         T*&amp; operator[](<span class="keywordtype">size_t</span> index) 
+<a name="l00402"></a>00402         { 
+<a name="l00403"></a>00403             assert(index &lt; size);
+<a name="l00404"></a>00404             <span class="keywordflow">return</span> array[index];
+<a name="l00405"></a>00405         }
+<a name="l00406"></a>00406         
+<a name="l00407"></a>00407         T* operator[](<span class="keywordtype">size_t</span> index)<span class="keyword"> const</span>
+<a name="l00408"></a>00408 <span class="keyword">        </span>{ 
+<a name="l00409"></a>00409             assert(index &lt; size);
+<a name="l00410"></a>00410             <span class="keywordflow">return</span> array[index];
+<a name="l00411"></a>00411         }        
+<a name="l00412"></a>00412 
+<a name="l00413"></a>00413         <a class="code" href="classGC_1_1ArrayVar.html">ArrayVar</a>() {
+<a name="l00414"></a>00414             <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; size; i++) { 
+<a name="l00415"></a>00415                 array[i] = NULL;
+<a name="l00416"></a>00416             }
+<a name="l00417"></a>00417         }
+<a name="l00418"></a>00418 
+<a name="l00419"></a><a class="code" href="classGC_1_1ArrayVar.html#a5f9c791e14b1f130722fd3f5b76bd581">00419</a>         <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1ArrayVar.html#a5f9c791e14b1f130722fd3f5b76bd581">mark</a>(<a class="code" href="classGC_1_1MemoryAllocator.html">MemoryAllocator</a>* allocator) { 
+<a name="l00420"></a>00420             allocator-&gt;_mark((<a class="code" href="classGC_1_1Object.html">Object</a>**)array, size);
+<a name="l00421"></a>00421         }
+<a name="l00422"></a>00422     };
+<a name="l00423"></a>00423 
+<a name="l00427"></a>00427     <span class="keyword">template</span>&lt;<span class="keyword">class</span> T&gt;
+<a name="l00428"></a><a class="code" href="classGC_1_1VectorVar.html">00428</a>     <span class="keyword">class </span><a class="code" href="classGC_1_1VectorVar.html">VectorVar</a> : <a class="code" href="classGC_1_1Root.html">Root</a>
+<a name="l00429"></a>00429     {
+<a name="l00430"></a>00430         T** array;
+<a name="l00431"></a>00431         <span class="keywordtype">size_t</span> used;
+<a name="l00432"></a>00432         <span class="keywordtype">size_t</span> allocated;
+<a name="l00433"></a>00433 
+<a name="l00434"></a>00434       <span class="keyword">public</span>:
+<a name="l00435"></a>00435         T*&amp; operator[](<span class="keywordtype">size_t</span> index) 
+<a name="l00436"></a>00436         { 
+<a name="l00437"></a>00437             assert(index &lt; used);
+<a name="l00438"></a>00438             <span class="keywordflow">return</span> array[index];
+<a name="l00439"></a>00439         }
+<a name="l00440"></a>00440         
+<a name="l00441"></a>00441         T* operator[](<span class="keywordtype">size_t</span> index)<span class="keyword"> const</span>
+<a name="l00442"></a>00442 <span class="keyword">        </span>{ 
+<a name="l00443"></a>00443             assert(index &lt; used);
+<a name="l00444"></a>00444             <span class="keywordflow">return</span> array[index];
+<a name="l00445"></a>00445         }        
+<a name="l00446"></a>00446 
+<a name="l00447"></a>00447         <span class="keywordtype">size_t</span> size()<span class="keyword"> const</span>
+<a name="l00448"></a>00448 <span class="keyword">        </span>{
+<a name="l00449"></a>00449             <span class="keywordflow">return</span> used;
+<a name="l00450"></a>00450         }
+<a name="l00451"></a>00451 
+<a name="l00452"></a>00452         <span class="keywordtype">void</span> resize(<span class="keywordtype">size_t</span> newSize) 
+<a name="l00453"></a>00453         { 
+<a name="l00454"></a>00454             <span class="keywordtype">size_t</span> i;
+<a name="l00455"></a>00455             <span class="keywordflow">if</span> (newSize &gt; allocated) { 
+<a name="l00456"></a>00456                 allocated = allocated*2 &gt; newSize ? allocated*2 : newSize;
+<a name="l00457"></a>00457                 T** newArray = <span class="keyword">new</span> T*[allocated];
+<a name="l00458"></a>00458                 <span class="keywordflow">for</span> (i = 0; i &lt; used; i++) { 
+<a name="l00459"></a>00459                     newArray[i] = array[i];
+<a name="l00460"></a>00460                 }
+<a name="l00461"></a>00461                 <span class="keyword">delete</span>[] array;
+<a name="l00462"></a>00462                 array = newArray;
+<a name="l00463"></a>00463             }
+<a name="l00464"></a>00464             <span class="keywordflow">for</span> (i = used; i &lt; newSize; i++) { 
+<a name="l00465"></a>00465                 array[i] = NULL;
+<a name="l00466"></a>00466             }
+<a name="l00467"></a>00467             used = newSize;
+<a name="l00468"></a>00468         }
+<a name="l00469"></a>00469 
+<a name="l00470"></a>00470         <span class="keywordtype">void</span> push(T <span class="keyword">const</span>* obj) { 
+<a name="l00471"></a>00471             resize(used+1);
+<a name="l00472"></a>00472             array[used-1] = (T*)obj;
+<a name="l00473"></a>00473         }
+<a name="l00474"></a>00474 
+<a name="l00475"></a>00475         T* pop() { 
+<a name="l00476"></a>00476             assert(used != 0);
+<a name="l00477"></a>00477             <span class="keywordflow">return</span> array[--used];
+<a name="l00478"></a>00478         }
+<a name="l00479"></a>00479 
+<a name="l00480"></a>00480         T* top()<span class="keyword"> const </span>{ 
+<a name="l00481"></a>00481             assert(used != 0);
+<a name="l00482"></a>00482             <span class="keywordflow">return</span> array[used-1];
+<a name="l00483"></a>00483         }
+<a name="l00484"></a>00484 
+<a name="l00485"></a>00485         <a class="code" href="classGC_1_1VectorVar.html">VectorVar</a>(<span class="keywordtype">size_t</span> reserve = 8) {
+<a name="l00486"></a>00486             used = 0;
+<a name="l00487"></a>00487             allocated = reserve;
+<a name="l00488"></a>00488             array = <span class="keyword">new</span> T*[reserve];
+<a name="l00489"></a>00489         }
+<a name="l00490"></a>00490 
+<a name="l00491"></a>00491         ~<a class="code" href="classGC_1_1VectorVar.html">VectorVar</a>() {
+<a name="l00492"></a>00492             <span class="keyword">delete</span>[] array;
+<a name="l00493"></a>00493         }
+<a name="l00494"></a>00494 
+<a name="l00495"></a><a class="code" href="classGC_1_1VectorVar.html#ae1ca94f94bd271c19f449a7f81312488">00495</a>         <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classGC_1_1VectorVar.html#ae1ca94f94bd271c19f449a7f81312488">mark</a>(<a class="code" href="classGC_1_1MemoryAllocator.html">MemoryAllocator</a>* allocator) { 
+<a name="l00496"></a>00496             allocator-&gt;_mark((<a class="code" href="classGC_1_1Object.html">Object</a>**)array, used);
+<a name="l00497"></a>00497         }
+<a name="l00498"></a>00498     };
+<a name="l00499"></a>00499 };    
+<a name="l00500"></a>00500 
+<a name="l00501"></a>00501 <span class="preprocessor">#endif</span>
+<a name="l00502"></a>00502 <span class="preprocessor"></span>        
 </pre></div></div><!-- contents -->
 
 
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Mar 23 2014 10:52:25 for CppGC by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Apr 1 2014 12:56:15 for CppGC by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.7.6.1
 </small></address>

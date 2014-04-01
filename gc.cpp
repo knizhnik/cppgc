@@ -22,6 +22,14 @@ namespace GC
         return NULL;
     }
 
+    void MemoryAllocator::_visit(AnyWeakRef* wref)
+    {
+        if (wref->obj != NULL) { 
+            wref->next = weakReferences;
+            weakReferences = wref;
+        }
+    }
+
     void MemoryAllocator::_registerRoot(Root* root)
     {
         root->next = roots;
@@ -93,6 +101,14 @@ namespace GC
         }
     }
 
+    void MemoryAllocator::visit(AnyWeakRef* wref) 
+    {
+        MemoryAllocator* curr = ctx.get();
+        if (curr != NULL) {                 
+            curr->_visit(wref);
+        }
+    }
+
     void MemoryAllocator::registerRoot(Root* root) 
     {
         getCurrent()->_registerRoot(root);
@@ -140,8 +156,14 @@ namespace GC
     
     void MemoryAllocator::markPhase() 
     {
+        weakReferences = NULL;
         for (Root* root = roots; root != NULL; root = root->next) { 
             root->mark(this); 
+        }
+        for (AnyWeakRef* wref = weakReferences; wref != NULL; wref = wref->next) { 
+            if (((size_t)wref->obj & BLACK_MARK) == 0) { 
+                wref->obj = NULL;
+            }
         }
     }
     

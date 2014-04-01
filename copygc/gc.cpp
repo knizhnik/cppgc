@@ -41,6 +41,14 @@ namespace GC
         return obj;
     }
 
+    void MemoryAllocator::_visit(AnyWeakRef* wref)
+    {
+        if (wref->obj != NULL) { 
+            wref->next = weakReferences;
+            weakReferences = wref;
+        }
+    }
+
     void MemoryAllocator::_registerRoot(Root* root)
     {
         root->next = roots;
@@ -117,6 +125,14 @@ namespace GC
     Object* MemoryAllocator::allocate(size_t size) 
     {
         return getCurrent()->_allocate(size);
+    }
+
+    void MemoryAllocator::visit(AnyWeakRef* wref) 
+    {
+        MemoryAllocator* curr = ctx.get();
+        if (curr != NULL) {                 
+            curr->_visit(wref);
+        }
     }
 
     void MemoryAllocator::registerRoot(Root* root) 
@@ -196,7 +212,8 @@ namespace GC
         usedSegment = NULL;
         autoStartThreshold = (size_t)-1; // disable recusrive start of GC
         used = defaultSegmentSize;
-
+        weakReferences = NULL;
+        
         // First of all pin objects
         for (Pin* pin = pinnedObjects; pin != NULL; pin = pin->next) { 
             ObjectHeader* hdr = pin->obj->getHeader();
@@ -210,6 +227,15 @@ namespace GC
         // And finally copy and adjust all roots
         for (Root* root = roots; root != NULL; root = root->next) { 
             root->copy(this); 
+        }
+        // Reset all weak references to dead objects
+        for (AnyWeakRef* wref = weakReferences; wref != NULL; wref = wref->next) { 
+            ObjectHeader* hdr = wref->obj->getHeader();
+            if (hdr->copy & ObjectHeader::GC_COPIED) { 
+                wref->obj = (Object*)(hdr->copy - ObjectHeader::GC_COPIED);
+            } else if (hdr->segment->owner == this) {
+                wref->obj = NULL;
+            }
         }
         // Copy phase is done
         
