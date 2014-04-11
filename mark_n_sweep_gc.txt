@@ -494,22 +494,22 @@ And this is for mark&sweep allocator:
 
 Results at Linux are the following (in seconds - smaller is better):
 
-Standard new/delete     35
-Fixed size allocator    11
-Stack allocator         12
-boost::shared_ptr:      68
-std::shared_ptr:        68
-Mark&Sweep:             50
-Copying GC:             31
+    Standard new/delete     35
+    Fixed size allocator    11
+    Stack allocator         12
+    boost::shared_ptr:      68
+    std::shared_ptr:        68
+    Mark&Sweep:             50
+    Copying GC:             31
 
 Results at Windows (Visual Studio 2012) at the same system but under VmWare:
 
-Standard new/delete:    215
-Fixed size allocator:   11
-Stack allocator:        12
-std::shared_ptr:        447
-Mark&Sweep:             235
-Copying GC:             28
+    Standard new/delete:    215
+    Fixed size allocator:   11
+    Stack allocator:        12
+    std::shared_ptr:        447
+    Mark&Sweep:             235
+    Copying GC:             28
 
 
 Please notice that both shared_ptr and mark&sweep use standard C runtime memory allocation functions.
