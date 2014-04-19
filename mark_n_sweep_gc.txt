@@ -33,7 +33,12 @@ If you try to use normal C++ pointer instead of smart pointer, then it can happe
 (for example tree node) can be almost doubled. 
 
 Now let's return a little bit to theory. Implicit memory deallocation or garbage collection algorithms can be splitted in two main classes:
-reference-counter based and mark&sweep. Reference counters approach was described earlier. Mark&sweep algorithms consist of two phases.
+reference-counter based and and reference-tracing based. Reference counters approach was described earlier. Tracing-based algorithms are essentially modifications or combinations of two classic algorithms: Mark&Sweep and copying.
+
+Copying collectors have good performance characteristics but require objects to be moved in memory so they need 
+tight cooperation with language runtime and break common assumptions of C++ programmer.
+
+Mark&sweep algorithms consist of two phases.
 At the first phase (mark) algorithm recursively traverses all accessible objects and marks them. 
 At the second phase (sweep) it deallocates all non-marked objects. Mark&sweep algorithms can handle cyclic data structures and that is why them
 are used in most of modern high-level object-oriented languages, like Java or C#.
@@ -60,7 +65,7 @@ We have to address two main challenges:
 1. How to locate variables?
 2. How to locate references inside objects?
 
-We have no access to C++ runtime and C++ doesn't support reflection.
+For portability and maintainability reasons we prefer to avoid access to C++ runtime internals and C++ doesn't support necessary level of reflection.
 So we still have to use something like smart pointers instead of normal C++ pointers.
 But their usage will be quite different comparing with shared_ptr using reference counter.
 And we really need to have two different kind of pointers.
